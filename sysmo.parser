@@ -1,0 +1,223 @@
+// load workbook and sheet
+loadWorkbook(_inputFile_)
+useSheet(_sheet_)
+// define header format for this sheet
+headerFormat {
+	row "l1"
+	row "l2"
+	row "l3"
+	row "pn"
+	row "pv"
+}
+// start parsing of strains, specimens, samples and treatments
+parse {
+
+	parseEntity entity(ofKind: "strain"){
+		parseProperty necessary: "id", from: "Strain"
+		parseProperty necessary: "title", from: "Strain"
+		parseProperty necessary: "contributor name", from: "Metadata.Creator"
+		parseProperty necessary: "project name(s)", from: "Metadata.Project"
+		parseProperty necessary: "organism", from: "Organism"
+		parseProperty "ncbi", from: "NCBI_ID"
+		parseProperty "genotypes-gene", from: "Genotype"
+		parseProperty "phenotypes", from: "Phenotype"
+
+		applyRule "set genotypes modification", 
+			antecedent: { e -> e."genotypes-gene" in ["", "wild type", "wild-type", "wt"]},
+			consequence: { e -> e."genotypes-gene" = "" },
+			consequenceEffects: "genotypes-gene"
+	}
+
+	parseEntity entity(ofKind: "specimen"){
+		parseProperty necessary: "id", from: /Specimen.*title/
+		parseProperty necessary: "title", from: /Specimen.*title/
+		parseProperty "lab internal id", from: /Specimen.*lab_internal_id/
+		parseProperty "start date", from: "Culture_start_date"
+		parseProperty necessary: "contributor name", from: "Metadata.Creator"
+		parseProperty necessary: "project name(s)", from: "Metadata.Project"
+		parseProperty "growth type", from: "Metadata.Growth type"
+
+		linkTo "strain"	
+	}
+
+	
+
+	parseEntity entity(ofKind: "sample"){
+		parseProperty necessary: "id", from: "Sample ID"
+		parseProperty necessary: "title", from: "Sample ID"
+		parseProperty necessary: "title", from: "SAMPLE Name" // overspecification
+		parseProperty necessary: "contributor name", from: "Metadata.Creator"
+		parseProperty "organism part", from: "organism/cell part"
+		parseProperty "sampling date", from: "Date_at_sampling"
+		parseProperty "age at sampling (hours)", from: "Age_at_sampling_hours"
+		parseProperty "originating data file id", from: "Metadata.Data file SEEK ID"
+
+		linkTo "specimen"
+
+		applyRule "generate id for sample", antecedent: { e -> true }, consequence: { e -> e.id = e.title  }, consequenceEffects: "id" 
+	}
+
+	
+
+	
+
+	columnGroup(regexPatterns: [value: /(?i)treatment\d?.*value.*/, 
+		substance: /(?i)treatment\d?.*substance.*/, 
+		time: /(?i)treatment\d?.*time after treatment.*/], groupBy: "header@l1") {
+		parseEntity entity(ofKind: "treatment"){
+			parseProperty necessary: "id", from: "header@l1", of: "value"
+			parseProperty necessary: "title", from: "header@l1", of: "value"
+			parseProperty "treatment type", from: "header@l2", of: "value"
+			parseProperty "substance", from: "header@pv", of: "substance"
+			parseProperty "value", from: "value"
+			parseProperty "unit", from: "header@pv", of: "value"
+			//parseProperty "valueAndTime", from: ["value", "time"]
+			parseProperty "time after treatment", from: "time"
+			parseProperty "time after treatment unit", from: "header@pv", of: "time"
+
+			linkTo necessary: "sample", name: "belongsToSample"
+
+			/*applyTransformation "join value and substance of a treatment description", ofList: { it?.join("--") }, onProperty: "valueAndTime"	
+
+			applyRule "inject new prop into entity", antecedent: { e -> true }, consequence: { e -> e.valueAndSubstance = [e?.value, e?.substance].join("--") }, consequenceEffects: "valueAndSubstance" */
+		}
+	}
+}
+// output some json representation of the parsed entities
+saveEntitiesWithLinksAsProperties("parsed-entities-sysmo.json")
+saveJSON("full-output-sysmo.json")
+
+printEntitiesWithLinksAsProperties()
+printJSON()
+
+createEntityDefinitions() {
+	define(entity:'treatment'){
+		doNotDisplay property: "id"
+		doNotDisplay properties: ["substance", "value", "unit"]
+		display "value"
+		display properties: ["value", "unit"]
+		notSearchable "id"
+		notSearchable properties: ["value", "unit"]
+		searchable properties: ["id", "belongsToSample"]
+		notRequired property: "id"
+		required properties: ["substance", "value", "unit"]
+	}
+	define(entity:'sample'){
+		notRequired "id"
+		property "title", searchable: true, displayed: false, required: false
+	}
+	define(entity:'newEntity'){
+		property necessary:"id", searchable: false, displayed: false
+		property "title", searchable: true, displayed: true, required: true 
+		property "info", searchable: true, displayed: true
+	}
+}.saveTo("edef-test.json")
+
+createEntityDefinitions().saveTo("unmodified-edef-test.json")
+
+/*
+
+// in a different file one then could use
+checkEntitiesAgainstDefinitions("sysmo-entities.json")
+// should produce sensible output if sth fails, like:
+WARNING: for entity "sample" property "title" is missing
+ERROR: for entity "sample" necessary property "id" is missing
+ERROR: property "id" of "sample" could not be casted to Integer
+...
+
+*/
+
+
+// define format for the xls export
+exportFormat {
+	headerFormat (forSheet:"strains") { 
+		row {
+			col "id"
+			col "title"
+			col "contributor name"
+			col "project name(s)"
+			col "organism"
+			col "ncbi"
+			col "provider name"
+			col "providers id"
+			col "comments"
+			col "genotypes-gene"
+			col "genotypes-modification"
+			col "phenotypes"
+		}		
+	}
+
+	headerFormat (forSheet:"specimens") {
+		row {
+			col "id"
+			col "title"
+			col "lab internal id"
+			col "start date / born date"
+			col "provider name"
+			col "providers id"
+			col "contributor name"
+			col "project name(s)"
+			col "institution name"
+			col "growth type" 
+			col "belongs to parsed strain"	
+		}
+	}
+
+	headerFormat (forSheet:"samples") {
+		row {
+			col "id"
+			col "title"
+			col "lab internal id"
+			col "providers id"
+			col "provider name"
+			col "belongs to parsed specimen"			
+			col "contributor name"
+			col "organism part"
+			col "sampling date"
+			col "age at sampling (hours)"
+			col "comments"
+			col "orginating data file id"
+			col "associated assays id's"
+			col "associated sop id's"
+		}
+	}
+
+	headerFormat (forSheet:"treatments") {
+		row {
+			col "treatment type"
+			col "substance"
+			col "value"
+			col "unit"
+			//col "valueAndTime"
+			//col "valueAndSubstance"
+			col "time after treatment"
+			col "time after treatment unit"
+			col "belongs to parsed sample"
+		}
+	}
+
+	// here a default mapping rule applies:
+	// map all properties with name = column name to column with that name
+	// unless stated otherwise
+	map entity: "strain", toSheet:"strains" 
+
+	map entity: "specimen", toSheet:"specimens", {
+		property "start date", to: "start date / born date"
+		property "linksTo", to: "belongs to parsed strain"
+	} // add shortcut to create links like links to: column label
+
+	map entity: "sample", toSheet:"samples", {
+		property "linksTo", to: "belongs to parsed specimen"
+	}
+
+	map entity: "treatment", toSheet: "treatments", {
+		property "linksTo", to: "belongs to parsed sample"
+	}
+}
+
+// set entities which should be filtered for unique id before export
+_exportUniqueEntities_ = ["strain", "specimen", "sample"]
+// finally export to destination xls
+export _outputFile_
+
+

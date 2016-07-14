@@ -1,0 +1,170 @@
+// load workbook and sheet
+loadWorkbook(_inputFile_)
+useSheet("Tabelle1")
+// define header format for this sheet
+headerFormat {
+	row "empty"
+	row "l1"
+	row "fun"
+	row "stuff"
+}
+
+parse {
+
+	parseEntity entity(ofKind: "organism"){
+		parseProperty necessary:"id", from: ".*species"
+		parseProperty "title", from: ".*species"
+	}
+
+	parseEntity entity(ofKind: "strain"){
+		parseProperty necessary:"id", from: ".*strain"
+		parseProperty "title", from: ".*strain"
+
+		linkTo "organism", name: "belongsToOrganism"
+	}
+
+	parseEntity entity(ofKind: "specimen"){
+		parseProperty "sex", from: ".*sex"
+		parseProperty necessary:"id", from: ".*animal nr"
+		parseProperty "title", from: ".*animal nr"
+		parseProperty "lab_internal_number", from: ".*animal nr"
+		parseProperty "age", from: ".*age"
+		parseProperty "comments", from: ".*specials"
+		parseProperty "genotype title", from: ".*genotype"
+		parseProperty "genotype modification", from: ".*genotype"
+
+		def genotypeRegex = /([\w\d]+)([\/+-]+)/
+
+		applyTransformation matchAndTake(genotypeRegex, 1), onProperty: "genotype title"
+		applyTransformation matchAndTake(genotypeRegex, 2, ""), onProperty: "genotype modification"
+
+		applyAction injectProperty("age unit", "weeks")
+
+		linkTo "strain", name: "belongsToStrain"
+	}
+
+	parseEntity entity(ofKind: "sample"){
+		parseProperty necessary: "id", from: ".*animal nr"
+		parseProperty necessary: "title", from: ".*animal nr"
+		parseProperty "donation date", from: ".*donation date"
+
+		applyAction injectProperty("organism part", "organ")
+		applyAction injectProperty("tissue and cell types", "liver")
+
+		// onProperties: ["id", "title"] wäre hier nett & vereinfachend
+		applyTransformation "transform animal nr", ofElements: { it + "_liver" }, onProperty: "id"
+		applyTransformation "transform animal nr", ofElements: { it + "_liver" }, onProperty: "title"
+
+		linkTo "specimen", name: "belongsToSpecimen"
+	}
+
+	parseEntity entity(ofKind: "treatment"){
+		parseProperty necessary: "value", from: ".*Treatment"
+		parseProperty "incubation time", from: ".*Incubation period"
+
+		applyAction injectProperty("type", "surgical procedure")
+		applyAction injectProperty("incubation time unit", "hours")		
+
+		linkTo "specimen", name: "belongsToSpecimen"
+        linkTo "sample", name: "belongsToSample"
+	}
+
+	parseEntity entity(ofKind: "treatment"){
+		parseProperty "value", from: "header@l1", of: ".*BrdU"
+		parseProperty "value unit", from: "header@l1", of: ".*BrdU"
+		parseProperty necessary: "substance applied", from: ".*BrdU"
+		
+		def regex = /^.*\(\s*(\d+)\s*(.*)\)$/
+
+		applyTransformation matchAndTake(regex, 1), onProperty: "value"
+		applyTransformation matchAndTake(regex, 2), onProperty: "value unit"
+
+		parseProperty "incubation time", from: ".*Incubation period"
+
+		applyAction injectProperty("type", "substance")
+		applyAction injectProperty("incubation time unit", "hours")		
+
+		applyAction setPropertyNullIfNot("substance applied", { "BrdU" == it."substance applied"})
+
+		linkTo "specimen", name: "belongsToSpecimen"
+		linkTo "sample", name: "belongsToSample"
+	}
+
+
+}
+
+/*saveEntitiesWithLinksAsProperties(_jsonOutputFile_)
+
+exportFormat {
+
+	headerFormat(forSheet: "organisms"){
+		row {
+			col "title"
+		}
+	}
+
+	headerFormat(forSheet: "strains"){
+		row {
+			col "title"
+			col "belongs to parsed organism"
+		}
+	}
+
+	headerFormat(forSheet: "specimens"){
+		row {
+			col "title"
+			col "lab_internal_number"
+			col "age"
+			col "age unit"
+			col "comments"
+			col "genotype title"
+			col "genotype modification"
+			col "belongs to parsed strain"
+		}
+	}
+
+	headerFormat(forSheet: "samples") {
+		row {
+			col "title"
+			col "donation date"
+			col "organism part"
+			col "tissue and cell types"
+			col "belongs to parsed specimen"
+		}
+	}
+
+	headerFormat(forSheet: "treatments") {
+		row {
+			col "type"
+			col "value"
+			col "substance"
+			col "incubation time"
+			col "incubation time unit"	
+			col "belongs to"		
+		}
+	}
+
+	map entity: "organism", toSheet: "organisms"
+
+	map entity: "strain", toSheet: "strains", {
+		property "linksTo", to: "belongs to parsed organism"
+	}
+	
+	map entity: "specimen", toSheet: "specimens", {
+		property "linksTo", to: "belongs to parsed strain"
+	}
+
+	map entity: "sample", toSheet: "samples", {
+		property "linksTo", to: "belongs to parsed specimen"
+	}
+
+	map entity: "treatment", toSheet: "treatments", {
+	    property "substance applied", to: "substance"
+		property "linksTo", to: "belongs to"
+	}
+}
+
+_exportUniqueEntities_ = ["organism:title", "strain:title", "specimen:title", "sample:title"]
+
+export _outputFile_
+*/

@@ -1,0 +1,145 @@
+headerFormat {
+	row "l1"
+	row "l2"
+	row "l3"
+}
+
+loadWorkbook(_inputFile_)
+useSheet(_sheet_)
+
+parse {
+	
+	parseEntity entity(ofKind: "entity1") {
+		parseProperty necessary:"id", from: "column", of: "id" // == parseProperty necessary:"id", from:"id" -- column default, if from: not header
+		parseProperty "id2", from: "column", of: 1
+		parseProperty "fulltitle", from: ["title", "additional title"]
+		parseProperty "fulltitle2", from: [2, 3]
+		// ...
+		parseProperty "sfxheader", from: "header@l1", of:"sfx"
+		parseProperty "sthImportantAtL3", from:"header@l3", of:"sfx"
+
+		//parseProperty necessary:"NecessaryButNotHere", from:"nowhere"
+
+		applyTransformation "trans1", ofElements: { it += " via colIndex"}, onProperty: "id2"
+		applyTransformation "trans2", ofList: { it?.join("--") }, onProperty: "fulltitle"	
+		applyTransformation "trans3", ofElements: { it?.toUpperCase() }, ofList: { (it?.join("--")) + " via colIndex" }, onProperty: "fulltitle2"	
+	}
+
+	parseEntity entity(ofKind: "entity2") {
+		parseProperty necessary:"id", from: 5
+		parseProperty "funkadelic", from: 6 
+		parseProperty "velocity", from: 7
+		parseProperty "velocity unit", from: 7
+
+		def veloRegex = /(\d*)\s*(.*)/
+
+		applyTransformation "trans6", ofElements: { value -> if((m = value =~ veloRegex).matches()) { return m.group(1) }; "" }, onProperty: "velocity"
+		applyTransformation "trans7", ofElements: { value -> if((m = value =~ veloRegex).matches()) { return m.group(2) }; "" }, onProperty: "velocity unit"
+		
+		// ...
+		
+		linkTo "entity1" // default: entityInSameRow: true, optinal: withID: someID
+	}
+
+	columnGroup(headerPattern: ["substance.l2.l3", "value.l2.l3"]) {
+
+		parseEntity entity(ofKind: "treatment") {
+			parseProperty "substance", from: 1
+			parseProperty "value", from: 2
+
+			linkTo "entity2"
+		}
+
+	}
+
+	columnGroup(start: 15, size: 2, repetitions: 2) {
+
+		parseEntity entity(ofKind: "strangestuff") {
+			parseProperty "me(normalized)", from: 1
+			parseProperty "you(normalized)", from: 2
+		}
+
+		parseEntity entity(ofKind: "strangestuff-me") {
+			parseProperty "me(normalized)", from: 1
+		}
+
+		parseEntity entity(ofKind: "strangestuff-you") {
+			parseProperty "you(normalized)", from: 2
+
+			linkTo "strangestuff-me"  // doesn't work; isn't unique either; 
+			// the real problem is: linkTo presupposes an id field!
+			// think about linking to many entities with different ids in the same row
+		}	
+	}
+
+
+	columnGroup(regexPatterns: [/treatment\d*.*value.*/, /treatment\d*.*unit.*/]) {
+		
+		parseEntity entity(ofKind: "treatment from regex cgs") {
+
+			parseProperty "value", from: 1
+			parseProperty "unit", from: 2
+
+			applyRule "convert values to Integer", antecedent: { e -> true }, consequence: { e -> e.value = e.value as Integer }, consequenceEffects: "value" 
+			applyRule "double values >= 100; negate values < 100", antecedent: {e -> (e.value as Integer) >= 100}, consequence: {e -> e.value *= 2}, consequenceEffects: "value",
+					alternative: {e -> e.value *= -1}, alternativeEffects: "value"	
+		}
+
+	}
+
+}
+
+outputJSON()
+
+
+exportFormat {
+	headerFormat (forSheet:"regexTreatments") { 
+		row {
+			col "value"
+			col "unit"
+		}		
+	}
+	headerFormat (forSheet:"entity2") { 
+		row {
+			col "id"
+			col "velocity"
+			col "velocity unit"
+			col "very important"
+			col "belongsTo"
+		}
+	}
+	headerFormat (forSheet:"entity1") {
+		row {
+			col "id"
+			col "full title"
+			col "from l3 with love"
+		}
+	}
+
+	map entity: "treatment from regex cgs", toSheet:"regexTreatments", {
+		property "value", to: "value"
+		property "unit", to: "unit"
+	}
+
+	map (entity: "entity2", toSheet:"entity2") {
+		property "id", to: "id"
+		property "velocity", to: "velocity"
+		property "velocity unit", to: "velocity unit"
+		property "funkadelic", to: "very important"
+		property "linksTo", to: "belongsTo"
+	}
+
+	map (entity: "entity1", toSheet:"entity1") {
+		property "id", to: "id"
+		property "fulltitle2", to: "full title"
+		property "sthImportantAtL3", to: "from l3 with love"
+	}
+}
+
+
+//_embedProvenanceInformation_ = true
+export _outputFile_ //"exportFromBuilder.xlsx"
+
+
+// vllt sollte es default sein, dass export, loadWorkbook, useSheet die parameter _xyz_ implizit benutzen, wenn keine anderen parameter angegeben werden
+// noch besser: loadWorkbook und useSheet werden automatisch in der parse Closure aufgerufen, wenn noch kein workbook geladen bzw. noch kein sheet gesetzt wurde

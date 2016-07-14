@@ -1,0 +1,1796 @@
+#! /usr/bin/groovy
+
+
+@Grab("org.apache.poi#poi;3.10-FINAL")
+@Grab("org.apache.poi#poi-ooxml;3.10-FINAL")
+
+import java.text.SimpleDateFormat
+
+import groovy.util.*
+
+import static groovy.json.JsonOutput.*
+import groovy.json.JsonSlurper
+
+import org.apache.poi.xssf.usermodel.*
+import org.apache.poi.ss.usermodel.*
+
+
+class ExcelHelper {
+
+	static final df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss a") // 1/29/2009  1:00:00 PM
+	static cellStylesMap = [:]		
+
+	static loadWorkbook(filename){
+		cellStylesMap = [:]		
+		WorkbookFactory.create(new File(filename))		 		
+	}
+
+	static getSheet(sheetName, wb){
+		wb.getSheet(sheetName)
+	}
+
+	static createWorkbook(){
+		cellStylesMap = [:]		
+		new XSSFWorkbook()
+	}
+
+	static saveWorkbook(workbook, filename){
+		try {
+                        
+        	def fileOut = new FileOutputStream(filename)
+            workbook.write(fileOut)
+            fileOut.close()
+                           
+        } catch (FileNotFoundException e) {
+       		e.printStackTrace()
+        } catch (IOException e) {
+    		e.printStackTrace()
+        }
+	}
+
+	static readCell(cell) { 
+
+		if(!cell) { return null }
+
+		switch (cell.getCellType()) {
+          	case Cell.CELL_TYPE_BOOLEAN: return cell.getBooleanCellValue()
+            case Cell.CELL_TYPE_NUMERIC: 
+            	if (DateUtil.isCellDateFormatted(cell)) {
+                	return df.format(cell.getDateCellValue())
+                } else {
+                	cell.setCellType(Cell.CELL_TYPE_STRING)
+                	def numberString = cell.getRichStringCellValue().getString()    
+                	//println "@@@@ get numeric cell as string, numberString: $numberString"
+                	
+
+                   	if(numberString.contains(".") || numberString.contains(",")){
+                   		def value = new Float(numberString).toString()
+                   		//println "@@@@ return numeric cell as string, value: $value"
+                   		cell.setCellValue(value)
+                   		return value
+                   	}
+                   	else{
+                   		def value = new Integer(numberString).toString()
+                   		//println "@@@@ return numeric cell as string, value: $value"
+                   		cell.setCellValue(value)
+                   		return value
+                   	}                   	
+                }
+            case Cell.CELL_TYPE_STRING: return cell.getRichStringCellValue().getString() 
+            case Cell.CELL_TYPE_FORMULA: 
+            	try{
+            		def evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator()
+					return evaluator.evaluate(cell).getStringValue()
+				}catch(exception){
+					//println "exception $exception"
+					return cell.getCellFormula()
+				}
+            default: return null
+        }
+	}
+
+	static copyCell(from, to, transposeReferences=false) {
+
+		def toCellStyle = cellStylesMap[from.getCellStyle().hashCode()]
+
+		if(!toCellStyle){
+			toCellStyle = to.getSheet().getWorkbook().createCellStyle()
+			toCellStyle.cloneStyleFrom(from.getCellStyle())
+			cellStylesMap[from.getCellStyle().hashCode()] = toCellStyle
+		}
+
+		to.setCellStyle(toCellStyle)
+		to.setCellType(from.getCellType())		
+
+		switch (from.getCellType()) {
+			case Cell.CELL_TYPE_BOOLEAN: to.setCellValue(from.getBooleanCellValue()); break
+			case Cell.CELL_TYPE_NUMERIC: to.setCellValue(from.getNumericCellValue()); break
+			case Cell.CELL_TYPE_STRING: to.setCellValue(from.getRichStringCellValue()); break
+			case Cell.CELL_TYPE_FORMULA: to.setCellFormula(from.getCellFormula()); break //println from.getCellFormula(); break
+			case Cell.CELL_TYPE_BLANK: to.setCellValue(from.getStringCellValue()); break
+			default: break //println "cell with cellType " + from.getCellType() + " was not parsed..." 
+		}
+
+		if(from.getHyperlink()){
+			def link = to.getSheet().getWorkbook().getCreationHelper().createHyperlink(from.getHyperlink().getType())
+			link.setAddress(from.getHyperlink().getAddress())
+			to.setHyperlink(link)
+		}
+
+
+		//def evaluator = to.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator()
+		//evaluator.evaluateInCell(to)
+	}
+
+	static addCommentToCell(cell, commentString, width=1, height=3){
+		def wb = cell.getSheet().getWorkbook()
+		def factory = wb.getCreationHelper()
+
+		def drawing = cell.getSheet().createDrawingPatriarch()
+
+		def anchor = factory.createClientAnchor()
+		anchor.setCol1(cell.getColumnIndex())
+		anchor.setCol2(cell.getColumnIndex() + width)
+		anchor.setRow1(cell.getRowIndex())
+		anchor.setRow2(cell.getRowIndex() + height)
+
+		def comment = drawing.createCellComment(anchor)
+		def str = factory.createRichTextString(commentString)
+		comment.setString(str)
+		comment.setAuthor("genXlsParsingWithProvenance")
+
+		cell.setCellComment(comment)
+
+	}
+
+	
+}
+
+
+class ParsingFramework {
+	def workbook
+	def sheet
+	def sheetName
+	def parsedEntities = []
+	def entityDescriptors = [] 
+
+	def loadWorkbook(filename){
+		workbook = ExcelHelper.loadWorkbook(filename)
+		this
+	}
+
+	def useSheet(sheetName){
+		this.sheetName = sheetName
+		sheet = ExcelHelper.getSheet(sheetName, workbook)
+		this 
+	}
+
+	// creates a transposed copy of the sheet in use		
+	def transpose(){
+		//println "transpose data of $sheetName"
+		
+		def transposedSheetName = "transposed_$sheetName"
+		def transposedSheet = workbook.createSheet(transposedSheetName)
+
+		// do the funky chicken dance
+		def data = []
+
+		sheet.each { row ->
+			row.each { cell -> 
+				data << [row: cell.getRowIndex(), col: cell.getColumnIndex(), cell: cell]
+			}
+		}
+
+		def transposedData = data.collect { [row: it.col, col: it.row, cell: it.cell] }		
+
+		transposedData.each { td -> 
+			def row = transposedSheet.getRow(td.row) ?: transposedSheet.createRow(td.row)
+			def transposedCell = row.getCell(td.col) ?: row.createCell(td.col)
+			ExcelHelper.copyCell(td.cell, transposedCell)
+		}
+
+		ExcelHelper.saveWorkbook(workbook, "testTranspose.xlsx")
+
+		sheetName = transposedSheetName
+		sheet = transposedSheet
+
+		this
+	}
+
+	def checkParsedEntities(){
+		parsedEntities.removeAll { entity -> 
+			def remove = !checkParsedEntity(entity)
+			/*if(remove){
+				println "WARNING: entity rejected due to missing necessary properties."
+				println entity
+			}*/
+			remove 
+		 }
+	}
+
+	def checkParsedEntity(entity){
+		if(!entity.necessaryProperties){
+			true
+		}
+		else{		 		  	
+		  	entity.necessaryProperties.collect { k -> entity[k] }.inject(true) { acc, val -> acc && val }		  	
+		}		
+	}
+
+	def addParsedEntity(entity) {
+		parsedEntities << entity		
+	}
+
+	def getParsedEntities(kind, row=null){
+		if(!row){
+			parsedEntities.findAll { e -> e.kind == kind }	
+		}
+		else{
+			parsedEntities.findAll { e -> e.kind == kind && e.fromRow == row }
+		}		
+	}
+
+	def addEntityDescriptor(entityDescriptor){
+		entityDescriptors << entityDescriptor
+	}
+
+	def getEntityDescriptors() {
+		entityDescriptors.unique() // maybe some merging will be necessary here for different entityDescriptors for one kind of entity
+	}
+	
+	def dataRows(headerFormat=null){
+		// trenne header von daten
+		// verarbeite header information
+		// lese daten und annotiere sie mit header informationen
+		
+		//println headerFormat 
+		
+		def dataRows = []
+
+		def firstHeaderRow = headerFormat?.headerRows?.min { it?.row }?.row ?: 1
+		def lastHeaderRow = headerFormat?.headerRows?.max { it?.row }?.row ?: 1
+		def firstDataRow = lastHeaderRow + 1
+
+		//println firstHeaderRow
+		//println lastHeaderRow
+
+		def header = [:].withDefault { [] }
+
+		(firstHeaderRow..lastHeaderRow).each { ri -> 
+			def row = sheet.getRow(ri - 1)
+			if(row){
+				row.each { cell -> 
+					def ci = cell.getColumnIndex() + 1
+					header[ci] << [rowIndex: ri, colIndex: ci, value: ExcelHelper.readCell(cell), 
+									descriptor: (headerFormat?.headerRows?.find { ri == it?.row }?.descriptor ?: "header")]
+				}
+			}
+		}
+
+		//println "headers parsed: "
+		//header.values().each { println it }
+
+		sheet.each { row ->
+
+			def ri = row.getRowNum() + 1
+
+			if(ri >= firstDataRow) {
+
+				def dataRow = new DataRow(parsingFramework: this, rowNumber: ri, header: header.values() )
+
+				row.each { cell ->
+					def ci = cell.getColumnIndex() + 1
+					dataRow.columns << new Column(rowIndex: ri, colIndex: ci, header: header[ci].collect{ it.value }.join("."), fullHeader: header[ci], value: ExcelHelper.readCell(cell))
+				}	
+
+				dataRows << dataRow 
+			}			
+		}		
+		
+		dataRows 
+	
+	}
+
+	def askForLinkID(LinkingDescriptor ld, rowNumber, sourceEntity){
+		if(!ld.where){ // find entity of ld.entityKind in same row
+			parsedEntities.find { e -> e.kind == ld.entityKind && e.fromRow == rowNumber }?."${ld.linkToProperty}"
+		}
+		else{ // usere ld.where closure to detected matching entity of kind ld.entityKind
+			//println "§§§§§ DEBUG: using ld.where to find links from $sourceEntity to targetEntity of kind ${ld.entityKind}"
+			parsedEntities.find { targetEntity -> targetEntity.kind == ld.entityKind && ld.where(sourceEntity, targetEntity) }?."${ld.linkToProperty}"
+		}
+	}
+
+	def toJSON(fullOutput=true, outputLinksAsProperties=false){
+		if(fullOutput){
+			prettyPrint(toJson(parsedEntities.groupBy { it.kind }))  // this snippet from http://zefifier.wordpress.com/2012/10/04/recent-fav-way-to-pretty-print-a-graph-of-maps/
+		}
+		else {
+			def entitiesForOutput = new JsonSlurper().parseText(toJson(parsedEntities)) // JSON based deep copy
+			entitiesForOutput*.remove("fromRow")
+			entitiesForOutput*.remove("provenanceInformation")
+			entitiesForOutput*.remove("necessaryProperties")
+
+			if(outputLinksAsProperties){
+				entitiesForOutput.each { efo ->
+					if(efo.linksTo) {
+						efo.linksTo.eachWithIndex { link, li -> 
+							def name = link.name ?: "link${li+1}"
+							efo."$name" = link.kind + ":" + link.id	
+						}
+						efo.remove("linksTo")
+					}
+				}
+			}
+
+			prettyPrint(toJson(entitiesForOutput.groupBy { it.kind }))
+		}
+	}
+
+	def toXLS(filename, ExportFormat exportFormat, includeProvenanceInformation=false, exportUniqueEntities=false){
+		
+		def wb = ExcelHelper.createWorkbook()
+		Map<String, Map<String, Integer>> columnIndexLookup = [:].withDefault{ [:] }
+
+		exportFormat.headerFormat.each { shName, hf ->			
+			def sheet = wb.getSheet(shName) ?: wb.createSheet(shName)						
+
+			hf.headerRows.eachWithIndex { hr, ri -> 
+				def row = sheet.getRow(ri) ?: sheet.createRow(ri)
+				hr.headerColumns.eachWithIndex { hc, ci -> 
+					//create header label to column index information
+					columnIndexLookup."$shName"."${hc.label}" = ci 
+					//write header rows to sheet
+					def cell = row.getCell(ci) ?: row.createCell(ci)
+					cell.setCellValue(hc.label)
+				}
+			}
+		}
+
+		//println columnIndexLookup
+		
+		exportFormat.entityToSpreadsheetMappings.each { entityKind, entityMapping ->
+			// get sheet in wb by entityMapping.sheetName
+			def sheetName = entityMapping.sheetName
+			def sheet = wb.getSheet(sheetName) ?: wb.createSheet(sheetName)
+			// get first number of header rows for this sheet --> dataRowOffset
+			def dataRowOffset = exportFormat.headerFormat[sheetName].headerRows.size() 
+
+			//println "writing entities of kind $entityKind to sheet $sheetName"
+		
+
+			def entities = getParsedEntities(entityKind)
+
+			if(exportUniqueEntities){				
+				if(exportUniqueEntities instanceof Boolean){
+					//println "§§§§§ filter entities of $entityKind for uniqueness of $idProperty"
+					entities = entities.unique { it?.id }
+				}
+				else if(exportUniqueEntities instanceof List && exportUniqueEntities.any { it.split(":").first() == entityKind } ) {
+					def exportUniqueEntity = exportUniqueEntities.find { it.split(":").first() == entityKind }
+					def idProperty = "id"
+					if(exportUniqueEntity.contains(":")) { idProperty = exportUniqueEntity.split(":")[1] }
+					//println "§§§§§ filter entities of $entityKind for uniqueness of $idProperty"
+					entities = entities.unique { it?."$idProperty" }
+				}		
+			}
+
+			//println "§§§§§ write ${entities.size()} entities of kind $entityKind to XLS"
+
+			entities.eachWithIndex { entity, index -> 
+				// get row dataRowOffset + index for sheet or create if necessary
+				def ri = dataRowOffset + index
+				def row = sheet.getRow(ri) ?: sheet.createRow(ri)
+				entityMapping.propertyToColumnMappings.each { propertyMapping ->					
+					//println "writing property ${propertyMapping.property} with value ${entity[propertyMapping.property]} to row ${dataRowOffset + index} / column with header ${propertyMapping.columnHeader} @ column with index ${columnIndexLookup[sheetName][propertyMapping.columnHeader]}"
+					def ci = columnIndexLookup[sheetName][propertyMapping.columnHeader]
+					if(ci instanceof Number){
+						
+						// special case: linksTo
+						def value = null						
+						if(propertyMapping.property == "linksTo"){
+							if(entity.linksTo){
+								value = entity."linksTo".collect { lt -> lt.kind + ":" + lt.id	}.join(";")
+							}
+							else{
+								value = "Link target not defined"
+							}						
+						}
+						else{
+							value = entity[propertyMapping.property]
+						}  
+						
+						if(value){
+							def cell = row.getCell(ci) ?: row.createCell(ci)
+							cell.setCellValue(value)
+
+							if(includeProvenanceInformation){
+								def provInfo = entity.provenanceInformation.findAll { it.about == propertyMapping.property }
+								//println "§§§§ provInfo for ${propertyMapping.property} ::: " + provInfo
+
+								if(provInfo){
+									def commentString = provInfo.collect { pi -> "Produced from ${pi.sources.join(', ')} by ${pi.actions.join(', ')} transformations" }.join(";\n")
+									//println "§§§§ commentString --> $commentString"
+									ExcelHelper.addCommentToCell(cell, commentString, 20, 20)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// save wb to file
+		ExcelHelper.saveWorkbook(wb, filename)
+	}
+
+	def getProvenanceInformation(){
+		[]
+	}
+
+	def parse(Closure c, HeaderFormat hf){ // DSL helper method
+		dataRows(hf).each { dr ->
+			c.delegate = dr
+			c()
+			dr.postprocess()
+			this.checkParsedEntities()
+		}
+	}
+}
+
+
+class HeaderColumn {
+	def label	
+	def column 
+
+	String toString() {
+		"HeaderColumn for column $column with label $label"
+	}
+}
+
+class HeaderRow {
+	def row 
+	def descriptor
+	List<HeaderColumn> headerColumns = []
+
+	String toString() { 
+		"HeaderRow for row $row with descriptor $descriptor" + 
+		(headerColumns ? " with columns: " + headerColumns.collect { it.toString() }.join(",") : "")
+	}
+}
+
+class HeaderFormat {
+	def sheetName 
+	def numRows
+	List<HeaderRow> headerRows = []
+
+	String toString() {
+		"HeaderFormat for sheet $sheetName" + 
+		(headerRows ? " with rows: " + headerRows.collect { it.toString() }.join("\n") : "")
+	}
+}
+
+class PropertyToColumnMapping {
+	def property
+	def columnHeader 
+	def columnIndex 
+}
+
+class EntityToSpreadsheetMapping {
+	def sheetName	
+	def entityKind
+	List<PropertyToColumnMapping> propertyToColumnMappings = [] 
+}
+
+class ExportFormat {
+	Map<String, HeaderFormat> headerFormat = [:] // format of headers of each sheet defined
+	Map<String, List<EntityToSpreadsheetMapping>> entityToSpreadsheetMappings = [:] // entityKind is key
+}
+
+
+class Rule {
+	def name
+	def antecedent
+	def consequence
+	def alternative
+	def consequenceEffects = "global"
+	def alternativeEffects = "global"
+
+	String toString() { name }
+}
+
+class RuleEngine {
+
+	static applyRule(entity, Rule rule) {
+		//println "test rule $rule"
+		if(rule.antecedent(entity)) {
+			//println "apply consequence of rule $rule"
+			rule.consequence(entity)
+			entity.provenanceInformation << new ProvenanceInformation(about: rule.consequenceEffects, actions: [rule.name], agents: ["Parser", "RuleEngine"], sources: ["parsed property"])
+		}
+		else{
+			if(rule.alternative){
+				//println "apply alternative of rule $rule"
+				rule.alternative(entity)
+				entity.provenanceInformation << new ProvenanceInformation(about: rule.alternativeEffects, actions: [rule.name], agents: ["Parser", "RuleEngine"], sources: ["parsed property"])
+			}
+		}
+	}	
+
+	static applyRules(entity, List<Rule> rules){
+		rules.each { rule -> applyRule(entity, rule)}		
+	}
+
+	static applyRules(entity, Rule... rules){		
+		applyRules(entity, rules.toList())
+	}
+}
+
+
+class Column {
+	def rowIndex
+	def colIndex
+	def colGroupIndex
+	def header 
+	def fullHeader
+	def value 
+	def name
+
+	String toString() {
+		"column at row $rowIndex / column $colIndex has header $header and value $value ${name ? 'named ' + name : ''}"
+	}
+}
+
+enum MatchingStyle {
+	STRICT, PREFIX, INFIX, SUFFIX 
+}
+
+class EntityDefinitionHandler {
+
+	List<EntityDefinition> entityDefinitions = []
+
+	private entityDefinitionToRefine = null
+
+	def refine(Closure closure){
+		closure.delegate = this 
+		closure()
+		this
+	}
+
+	def define(value, Closure closure){		
+		def entityKind 
+
+		if(value instanceof String){
+			entityKind = value
+		}
+		else if(value instanceof Map && value.entity) {
+			entityKind = value.entity
+		}
+		else {
+			println "ERROR in defining entity. Entity kind needed"
+			return -1
+		}
+
+		entityDefinitionToRefine = entityDefinitions.find { ed -> ed.kind == entityKind }
+
+		if(!entityDefinitionToRefine){			
+			println "There is no definition for entities of kind $entityKind"
+			println "Creating one ..."
+			def newEntityDefinition = new EntityDefinition(kind:entityKind)
+			entityDefinitions += newEntityDefinition
+			entityDefinitionToRefine = newEntityDefinition
+		}
+
+		closure.delegate = this 
+		closure()
+	}
+
+	def updateProperty(propertyToRefine, args){
+		args.each { k, v -> 
+			switch(k){
+				case "necessary": propertyToRefine.required = true; break
+				case ["required", "displayed", "searchable"] : propertyToRefine."$k" = v; break;
+				default: "$k is not a known property of properties"				
+			}
+		}	
+		propertyToRefine
+	}
+
+	def createProperty(name, args) {
+		def newProperty = updateProperty([name:name, required: false, searchable: true, displayed: true], args)
+		entityDefinitionToRefine.properties += newProperty	
+		newProperty
+	}
+	
+	def property(Map args) {
+		def name = args.name ?: args.necessary
+		if(name){
+
+			def propertyToRefine = entityDefinitionToRefine.properties.find { prop -> prop.name == name }
+
+			if(propertyToRefine) { // update
+				println "updating $args"
+				updateProperty(propertyToRefine, args)
+			}
+			else { // create
+				println "creating $args"
+				createProperty(name, args)
+			}	
+
+		}
+		else{
+			println "No property name specified."
+		}
+	}
+
+	def property(Map args, String value){
+		args.name = value 
+		property(args)
+	}
+
+	def parsePropertyRefinement(args, action){
+		if(args instanceof String){
+			action(args)
+		}
+		else if(args instanceof Map){
+			if(args.property && args.property instanceof String){
+				action(args.property)
+			}		
+			else if(args.properties && args.properties instanceof List<String>) {
+				args.properties.each { property -> action(property) }
+			}
+		}
+		else {
+			println "Error parsing property refinement for $args"
+			println "Skipping ..."
+		}
+	}
+
+	def findAndSetProperty(name, property, value) {
+		def propertyToRefine = entityDefinitionToRefine.properties.find { prop -> prop.name == name }
+
+		if(propertyToRefine){
+			propertyToRefine."$property" = value
+		}
+		else{
+			println "There is no property $property for entities of kind ${entityDefinitionToRefine.kind}"
+			println "Skipping ..."
+		}
+	}
+
+	def display(String name){
+		findAndSetProperty(name, "displayed", true)
+	}
+
+	def display(Map args){
+		parsePropertyRefinement(args, this.&display)
+	}
+
+	def doNotDisplay(String name){
+		findAndSetProperty(name, "displayed", false)		
+	}
+
+	def doNotDisplay(Map args){
+		parsePropertyRefinement(args, this.&doNotDisplay)	
+	}
+
+	def searchable(String name) {
+		findAndSetProperty(name, "searchable", true)
+	}
+
+	def searchable(Map args){
+		parsePropertyRefinement(args, this.&searchable)			
+	}
+
+	def notSearchable(String name) {
+		findAndSetProperty(name, "searchable", false)
+	}
+
+	def notSearchable(Map args) {
+		parsePropertyRefinement(args, this.&notSearchable)
+	}
+
+	def required(String name){
+		findAndSetProperty(name, "required", true)
+	}
+
+	def required(Map args){
+		parsePropertyRefinement(args, this.&required)
+	}
+
+	def notRequired(String name){
+		findAndSetProperty(name, "required", false)
+	}
+
+	def notRequired(Map args){
+		parsePropertyRefinement(args, this.&notRequired)
+	}
+
+	def buildDefinitionsFromDescriptors(List<EntityDescriptor> entityDescriptors){
+		entityDefinitions = []
+
+		if(entityDescriptors) {
+
+			entityDescriptors.each { eDsc -> 
+
+				def eDef = new EntityDefinition(kind: eDsc.kind)
+				eDef.buildPropertiesFromPropertyDescriptors(eDsc.properties)
+				eDef.buildPropertiesFromLinkingDescriptors(eDsc.links)
+				entityDefinitions += eDef 
+			}
+		}
+
+		this 
+	}
+
+	def saveTo(filename) {
+		toJSON(filename)
+		this
+	}
+
+	def toJSON(filename) {
+		def jsonString = prettyPrint(toJson(entityDefinitions.groupBy { it.kind }))
+
+		if(filename){
+			try{
+				new File(filename).withWriter { writer -> writer << jsonString }
+			}catch(exception){
+				println "some error happened during EntityDefinition.toJSON($filename)"
+				println exception
+			}
+		}
+
+		jsonString
+	}
+
+	def fromJSON(filename) {		
+		try{
+			def json = new JsonSlurper().parseText(new File(filename).text)
+			entityDefinitions = []
+
+			json.each { kind, listOfProperties ->				
+					def eDef = new EntityDefinition(kind: kind, properties: listOfProperties)
+					entityDefinitions += eDef
+			}
+
+			this
+
+		}catch(exception){
+			println "some error happened during EntityDefinition.fromJSON($filename)"
+			println exception
+		}
+
+		null 
+	}
+
+
+	def checkAgainst(entity) {
+		true 
+	}
+
+
+
+}
+
+class EntityDefinition {
+	def kind 
+	def properties = []
+
+	def buildPropertiesFromPropertyDescriptors(List<PropertyDescriptor> propertyDescriptors) {	
+		propertyDescriptors.unique { pd -> pd.name }.each { pd -> 
+			properties += [name: pd.name, required: pd.isNecessary, displayed: true, searchable: true, typeInformation: [], constraints: []]
+		}
+
+	}
+
+	def buildPropertiesFromLinkingDescriptors(List<LinkingDescriptor> linkingDescriptors) {
+		linkingDescriptors.eachWithIndex { ld, i ->
+			def name = ld.name ?: "link${i+1}"
+			properties += [name: name, required: ld.isNecessary, displayed: false, searchable: false, typeInformation: [], constraints: []]
+		}
+	}
+}
+
+class EntityDescriptor {
+	def kind 
+	List<PropertyDescriptor> properties = []
+	List<LinkingDescriptor> links = []
+	List<Rule> rules = []
+	def defaultMatchingStyle = MatchingStyle.PREFIX 
+
+	String toString() {
+		"entity of kind $kind with ${properties.size()} properties and ${links.size()} links"
+	}
+
+	boolean equals(other){
+		def eq = true 
+
+		eq &= (this.kind == other.kind)
+		eq &= (this.properties.size() == other.properties.size())
+		eq &= (this.links.size() == other.links.size())
+		eq &= (this.properties.every { prop -> prop in other.properties })
+		eq &= (this.links.every { link -> link in other.links })
+
+		eq 
+	}
+}
+
+class PropertyDescriptor {
+	def name 
+	def where // columns / header 
+	def from 
+	def take = 1 
+	Transformation using 
+	def isNecessary = false 	
+	def matchingStyle
+	
+	/*def displayed = true 
+	def searchable = true 
+	def typeInformation = "String"
+	def constraints*/
+
+	String toString() {
+		"property $name is located at $where : $from. transformed by $using"
+	}
+
+	boolean equals(other) {
+		(this.name == other.name && this.isNecessary == other.isNecessary)
+	}
+}
+
+class LinkingDescriptor {
+	def name
+	def entityKind
+	def entityID 
+	def entityInSameRow
+	def isNecessary = false
+	def linkToProperty = "id"
+	def where 
+
+	String toString() {
+		"link to entity of kind $entityKind ${entityInSameRow ? 'in same row' : ''}"
+	}
+
+	boolean equals(other) {
+		(this.entityKind == other.entityKind && this.isNecessary == other.isNecessary && this.entityInSameRow == other.entityInSameRow && this.linkToProperty == other.linkToProperty)
+	}
+}
+
+class ColumnGroupDescriptor {
+	def regexPatterns
+	def start
+	def size
+	def repetitions 	
+	def headerPattern
+	def groupBy
+}
+
+class EntityParser {
+	
+	def parsingFramework
+	List<Column> columns = []
+	int rowNumber
+	def isColumnGroup = false 
+	def header
+	
+
+	def parseEntity() {}
+	def parseProperty() {}
+	def parseLink() {}
+
+	String toString() {
+		columns.collect { it.toString() }.join("\n")
+	}
+
+}
+
+class ProvenanceInformation {
+	def about 
+	def sources	= []
+	def agents = ["Parser"]
+	def actions = []
+
+	String toString() { "Provenance of $about: derived from $sources using $actions" }
+}
+
+class Transformation {
+	String name = "Identity"
+	Closure listTransformation = { it }
+	Closure elementTransformation = { it }
+	String onProperty // helping field for Builder
+
+	String toString() { name }
+	
+}
+
+
+class DataRow extends EntityParser {
+
+	def identityTransformation = new Transformation()
+	def stuffToPostprocess = []
+	
+	def parseEntity(EntityDescriptor ed) {
+		def newEntity = [kind: ed.kind, fromRow: rowNumber, provenanceInformation: [], necessaryProperties: []]
+
+		ed.properties.each { pd -> parseProperty(pd, newEntity) }
+		ed.links.each { ld -> stuffToPostprocess << [name: "link", entity: newEntity, action: {parseLink(ld, newEntity)}] }
+		ed.rules.each { rule -> stuffToPostprocess << [name: rule.name, entity: newEntity, action: {RuleEngine.applyRule(newEntity, rule)}] }
+		
+		parsingFramework.addParsedEntity(newEntity)
+		parsingFramework.addEntityDescriptor(ed)
+	}
+
+	def postprocess(){
+		//println "do some post-processing..."
+		//println "${stuffToPostprocess.size()} things to do!"
+		stuffToPostprocess.each { stp -> 
+			stp.action() 
+			/*if(stp.name != "link"){
+				println stp.entity.provenanceInformation.actions
+				println stp.name
+				stp.entity.provenanceInformation.actions << stp.name
+				println stp.entity.provenanceInformation.actions
+			}*/
+		}
+	}
+
+	def parseProperty(PropertyDescriptor pd, entity) {
+		// fallunterscheidung für pd.from: 1, [1,2,...], "A", ["A","B",...]
+		// handhaben von pd.isNessary
+		// wenn using Closure definiert, auf value(s) anwenden
+		// zu entity hinzufügen
+		
+		/*println columns
+		println pd.where
+		println pd.from*/		
+
+		if(pd.isNecessary){
+			entity.necessaryProperties << pd.name
+		}
+
+		def where = pd.where.toLowerCase()
+
+		def value = null
+		def transform = pd.using ?: identityTransformation
+		def colIndex = isColumnGroup ? "colGroupIndex" : "colIndex"
+
+		def provenance = new ProvenanceInformation(about: pd.name, actions:[transform.toString()])
+		def provenanceSuffix = ""
+
+		def buildMatchingString = { str, style -> 
+			def prefix = /(?i)^/
+			def suffix = /$/
+			switch(style){
+				case MatchingStyle.PREFIX:
+					suffix = /.*$/; break
+				case MatchingStyle.INFIX:
+					prefix = /(?i)^.*/; suffix = /.*$/; break
+				case MatchingStyle.SUFFIX:
+					prefix = /(?i)^.*/; break
+			}
+
+			if(str.contains("=")){
+				str = str.split("=")[1]
+			}
+
+			prefix + str + suffix 
+		}
+
+		def headerString = { col, from ->
+			if(from.contains("=")){
+				def descriptor = from.split("=")[0]
+				col.fullHeader.find { h -> h.descriptor == descriptor }?.value ?: col.header 								
+			}
+			else{
+				col.header
+			}
+		}
+
+		def parseColumn = { col -> 
+			if(where.startsWith("header")){
+				if(where.contains("@")){ // parse specified position in header
+					def descriptor = where.split("@")[1]
+					provenanceSuffix = "$descriptor"
+					col.fullHeader.find { h -> h.descriptor == descriptor }?.value ?: ""
+				}
+				else{ // return simple string representation of header cells
+					col.header
+				}
+			}
+			else{ // parse from cell
+				provenanceSuffix = "$rowNumber"
+				col.value				
+			}
+		}	
+
+		def provenanceSource = { header -> "${parsingFramework.sheetName}:$header${(pd.take > 1) ? ':' + pd.take : ''}@$provenanceSuffix" }
+
+		if(!(pd.from instanceof List)){
+			def col = null
+			def cols = []
+
+			if(pd.from instanceof Number){
+				col = columns.find { it."$colIndex" == pd.from }				
+			}
+			else{ // pd.from instanceof String
+				if(isColumnGroup && namedColumns){ // if we are in a columnGroup and have named columns try to match their names first
+					//println "searching for column with name ${pd.from} in columnGroup"
+					cols = columns?.findAll { it.name == pd.from }
+					if(cols) { col = cols[pd.take - 1] }
+				}
+				if(!col){ // // perfom a kind of infix search that also allows for regex patterns (also applied when the above search for matches was not successful) 
+					cols = columns?.findAll { c -> headerString(c, pd.from) ==~ buildMatchingString(pd.from, pd.matchingStyle) } 
+					if(cols) { col = cols[pd.take - 1] }
+				}
+			}
+
+			if(col){				
+				value = transform.elementTransformation(parseColumn(col))
+				provenance.sources += provenanceSource(col.header)
+			}
+		}
+		else{ // process list
+			//println "process list"
+			
+			def colIndices = pd.from.findAll { it instanceof Number }
+			def headerLabelsOrNames = pd.from - colIndices			
+
+			def columnsToParse = []
+
+			if(isColumnGroup && namedColumns){
+				columnsToParse += columns.findAll { col -> headerLabelsOrNames.any { hl -> col.name == hl }}
+			}
+
+			if(!columnsToParse){
+				columnsToParse += columns.findAll { col -> col."$colIndex" in colIndices || 
+													headerLabelsOrNames.any { hl -> headerString(col, pd.from) ==~ buildMatchingString(hl, pd.matchingStyle) } }
+			}
+
+			def parsedValues = columnsToParse.collect { col -> transform.elementTransformation(parseColumn(col)) }
+			def provenanceSources = columnsToParse.collect { provenanceSource(it.header) }
+			
+			/*println "§§§§ colIndices: $colIndices"
+			println "§§§§ headerLabels: $headerLabels"
+			println "§§§§ parsedValues: $parsedValues"*/
+
+			value = transform.listTransformation(parsedValues)
+			provenance.sources += provenanceSources
+		}
+
+		if(value){
+			entity."${pd.name}" = value 
+			entity.provenanceInformation << provenance					
+		}
+		else{
+			if(pd.isNecessary){
+				//println "raise error in parsing necessary property"
+				return false 
+			}
+		}
+
+		//println entity
+
+	}
+
+	def parseLink(LinkingDescriptor ld, entity) {
+		// fallunterscheidung
+		// wenn entityID gegeben, verwende diese
+		// wenn entityRow gegeben, erfrage entityID
+		// (sollte dies eine post-processing aktion sein? weil erst dann alle entitäten geparst wurden
+		// trennung von entity-parsing und verlinkung)
+		
+		//println "parse link for $ld"
+		//println "§§§§ DEBUG: entity : $entity"
+
+		if(ld.isNecessary){
+			entity.necessaryProperties << "linksTo"
+		}
+
+		def newLink = null
+
+		if(ld.entityID){
+			newLink = [kind: ld.entityKind, id: ld.entityID]
+			
+		}		
+		else{
+			if(ld.entityInSameRow){
+				def id = parsingFramework.askForLinkID(ld, rowNumber, entity)
+				if(id){
+					newLink = [kind: ld.entityKind, id: id]
+				}
+				else{
+					//println "error getting link for $ld in row $rowNumber"
+				}
+			}
+		}
+
+
+		if(newLink){
+
+			if(ld.name) {
+				newLink.name = ld.name
+			}
+
+			if(entity.linksTo){
+				entity.linksTo += newLink
+			}
+			else{
+				entity.linksTo = [newLink]
+			}
+		}
+	}
+
+	def columnGroup(args, Closure c) { // DSL helper method
+		createColumnGroups(new ColumnGroupDescriptor(args)).each { cg ->
+			c.resolveStrategy = Closure.DELEGATE_FIRST // otherwise it will execute parseEntity on owner = this first!
+			c.delegate = cg 
+			c()
+		}
+	}
+
+	def createColumnGroups(ColumnGroupDescriptor cgd) {
+		def columnGroups = []
+
+		if(cgd.headerPattern){
+			def patternLength = cgd.headerPattern.size()
+			def patternsFound = []
+			def columnHeaders = columns.collect { it.header }				
+			def columnsByColIndex= columns.groupBy { it.colIndex }		
+
+			//println "§§§§§§ columnsByColIndex " + columnsByColIndex
+			//println columnHeaders
+
+			def i = -1
+			def offset = 0
+
+			while((i = Collections.indexOfSubList(columnHeaders, cgd.headerPattern)) >= 0){	
+						
+				def matchedColumns = columnHeaders[i..<(i+patternLength)].collect{ new Column(header: it, colIndex:0, colGroupIndex:0, rowIndex: rowNumber, value: "") }				
+				matchedColumns.inject(1) { acc, val -> 
+					val.colIndex = offset + i + acc 
+					val.colGroupIndex = acc
+					val.value = (columnsByColIndex[val.colIndex]?.value instanceof List) ? columnsByColIndex[val.colIndex]?.value?.first() : columnsByColIndex[val.colIndex]?.value
+					//println columnsByColIndex[val.colIndex]
+
+					 ++acc
+				}
+				
+				columnHeaders = (columnHeaders.size() > i+patternLength) ? columnHeaders[(i+patternLength)..-1] : []				
+				
+				offset = offset + i + patternLength
+				
+				patternsFound << matchedColumns
+			}
+
+			patternsFound.each { 
+				columnGroups << new ColumnGroup(dataRowParent: this, rowNumber: rowNumber, columns: it, parsingFramework: parsingFramework)
+			}
+
+			//columnGroups.each { cg -> println cg.columns } 
+			
+		}
+		else if(cgd.start && cgd.size && cgd.repetitions){
+			//println "parsing ${cgd.repetitions} columnGroups of size ${cgd.size} starting from ${cgd.start}"
+
+			def sortedColumns = columns.sort { it.colIndex }
+
+			cgd.repetitions.times { ri ->
+
+				def selectedColumns = []
+
+				cgd.size.times { si ->
+					def tmpColumn = sortedColumns[cgd.start-1 + ri*cgd.size + si]
+					tmpColumn.colGroupIndex = si + 1
+					selectedColumns << tmpColumn
+				}
+
+				columnGroups << new ColumnGroup(dataRowParent: this, rowNumber: rowNumber, columns: selectedColumns, parsingFramework: parsingFramework)
+			}
+		}
+		else if(cgd.regexPatterns) { // && cgd.regexPatterns instanceof List){
+			//println "create column groups using regexPatterns"
+
+			def regexPatterns = cgd.regexPatterns
+			def namesForRegexPatterns = [:]
+			def namedRegexPatterns = false 
+
+			if(regexPatterns instanceof Map){
+				//println "converting named regexs"
+				regexPatterns.each { k,v -> namesForRegexPatterns[v] = k }
+				regexPatterns = regexPatterns.values()
+				namedRegexPatterns = true
+			}
+
+
+			def allMatchedColumns = [:]
+
+			regexPatterns.eachWithIndex { pattern, index ->
+
+				def matchedColumns = []
+
+				matchedColumns = columns.findAll { col -> col.header ==~ pattern }
+
+				def columnName = namesForRegexPatterns[pattern] // null if no names were defined
+
+				if(matchedColumns){
+					//println "found matches for $pattern"
+					// inject name for that column
+					matchedColumns*.name = columnName					
+					allMatchedColumns[index] = matchedColumns
+				}
+				else{
+					//println "found no matches for $pattern, search in header in case there is column without data to be mapped"
+					//println header
+					def matchedHeaders = header.findAll { h -> h.collect { it.value }.join(".") ==~ pattern }
+					if(matchedHeaders){
+						//println "found matching headers $matchedHeaders"
+						allMatchedColumns[index] = matchedHeaders.collect { mh -> 
+							new Column(rowIndex: rowNumber, colIndex: mh.colIndex.first(),
+								header: mh.collect{ it.value }.join("."),
+								fullHeader: mh,
+								value: "",
+								name: columnName)}
+					}
+					else{
+						//println "found no matching headers"
+					}
+				}
+			}			
+
+			if(!cgd.groupBy){
+				allMatchedColumns.values().toList().transpose().each { matchedColumns ->
+					matchedColumns.inject(1) { acc, val -> val.colGroupIndex = acc; ++acc }
+					columnGroups << new ColumnGroup(dataRowParent: this, rowNumber: rowNumber, columns: matchedColumns, parsingFramework: parsingFramework, namedColumns: namedRegexPatterns)
+				}
+			}
+			else{
+				def allMatchedColumnsFlattened = allMatchedColumns.values().toList().flatten()
+				def allMatchedColumnsGrouped 
+
+				if(cgd.groupBy.contains("@")){
+					def descriptor = cgd.groupBy.split("@")[1]
+					allMatchedColumnsGrouped = allMatchedColumnsFlattened.groupBy { mc ->
+							mc.fullHeader.find { fh -> fh.descriptor == descriptor }?.value
+					}
+					//println allMatchedColumnsGrouped
+				}
+				else{
+					allMatchedColumnsGrouped = allMatchedColumnsFlattened.groupBy { mc -> mc.header }					
+					//println allMatchedColumnsGrouped			
+				}
+
+
+				allMatchedColumnsGrouped.each { k, matchedColumns -> 
+					matchedColumns.inject(1) { acc, val -> val.colGroupIndex = acc; ++acc }
+					columnGroups << new ColumnGroup(dataRowParent: this, rowNumber: rowNumber, columns: matchedColumns, parsingFramework: parsingFramework, namedColumns: namedRegexPatterns)
+				}
+			}
+		}		
+
+		//println columnGroups
+		
+		columnGroups
+	}
+}
+
+class ColumnGroup extends DataRow {
+
+	def isColumnGroup = true	
+	def dataRowParent
+	def namedColumns = false
+
+	def parseEntity(EntityDescriptor ed) {
+		def newEntity = [kind: ed.kind, fromRow: rowNumber, provenanceInformation: [], necessaryProperties: []]
+
+		ed.properties.each { pd -> parseProperty(pd, newEntity) }
+		ed.links.each { ld -> dataRowParent.stuffToPostprocess << [name: "link", entity: newEntity, action: {parseLink(ld, newEntity)}] }
+		ed.rules.each { rule -> dataRowParent.stuffToPostprocess << [name: rule.name, entity: newEntity, action: {RuleEngine.applyRule(newEntity, rule)}] }
+		
+
+		parsingFramework.addParsedEntity(newEntity)
+		parsingFramework.addEntityDescriptor(ed)
+	}
+
+}
+
+class EntityDescriptorFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+		def ed = new EntityDescriptor(kind: attributes.ofKind)
+
+		if(attributes.matchingStyle) { ed.defaultMatchingStyle = attributes.matchingStyle }
+
+		ed
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class PropertyDescriptorFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		true 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+
+		def pd = new PropertyDescriptor(where: "column")
+
+		if(value) { pd.name = value }
+
+		if(attributes.necessary) { pd.isNecessary = true; pd.name = attributes.necessary }
+
+		if(attributes.from && attributes.from instanceof String && !attributes.from.contains("=") && (attributes.from.startsWith("column") || attributes.from.startsWith("header"))){
+			pd.where = attributes.from 
+			pd.from = attributes.of
+		}
+		else{
+			pd.from = attributes.from
+		}
+
+		if(attributes.take) { pd.take = attributes.take }
+
+		if(attributes.matchingStyle) { pd.matchingStyle = attributes.matchingStyle }
+
+		pd
+
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object propertyDescriptor) {
+		if(parent != null && parent instanceof EntityDescriptor){
+			if(!propertyDescriptor.matchingStyle) { propertyDescriptor.matchingStyle = parent.defaultMatchingStyle }
+			parent.properties << propertyDescriptor
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class TransformationFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+		// make identity transformation {it} default if nothing different is specified
+		if(value instanceof Transformation){
+			def transformation = value
+			transformation.onProperty = attributes.onProperty
+			transformation
+		}
+		else{
+			new Transformation(name: value, elementTransformation: attributes.ofElements ?: {it}, listTransformation: attributes.ofList ?: {it}, onProperty: attributes.onProperty)	
+		}		
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object transformation) {
+		if(parent != null && parent instanceof EntityDescriptor){
+			parent.properties.findAll { prop -> prop.name == transformation.onProperty }.each { prop -> prop.using = transformation }
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class LinkingDescriptorFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		true 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+		def ld = new LinkingDescriptor(entityInSameRow: true, isNecessary: false)
+		
+		if(value) { ld.entityKind = value }
+		if(attributes.necessary) { ld.isNecessary = true; ld.entityKind = attributes.necessary }
+		if(attributes.withID) { ld.entityInSameRow = false; ld.entityID = attributes.withID }
+		if(attributes.property) { ld.linkToProperty = attributes.property }
+		if(attributes.where) { ld.where = attributes.where }
+		if(attributes.name) { ld.name = attributes.name }
+
+		ld
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object linkingDescriptor) {
+		if(parent != null && parent instanceof EntityDescriptor){
+			parent.links << linkingDescriptor
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+
+class RuleFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		true 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+		if(value instanceof Rule){
+			value 
+		}
+		else{
+			new Rule(name: value)
+		}		
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object rule) {
+		if(parent != null && parent instanceof EntityDescriptor){
+			parent.rules << rule
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		true 
+	}
+
+}
+
+
+class EntityDescriptorFactoryBuilder extends FactoryBuilderSupport {
+	public EntityDescriptorFactoryBuilder(boolean init = true){
+		super(init)
+	}
+
+	def registerObjectFactories() {
+		registerFactory("entity", new EntityDescriptorFactory())		
+		registerFactory("parseProperty", new PropertyDescriptorFactory())	
+		registerFactory("applyTransformation", new TransformationFactory())	
+		registerFactory("linkTo", new LinkingDescriptorFactory())
+		registerFactory("applyRule", new RuleFactory())
+		registerFactory("applyAction", new RuleFactory())
+
+	}
+}
+
+class ExportFormatFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+		def exportFormat = new ExportFormat()
+		exportFormat.headerFormat = [:]
+		exportFormat.entityToSpreadsheetMappings = [:]
+		exportFormat
+	}
+
+}
+
+class HeaderFormatFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+		new HeaderFormat(sheetName: attributes.forSheet)
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object headerFormat) {
+		if(parent != null && parent instanceof ExportFormat){
+			parent.headerFormat[headerFormat.sheetName] = headerFormat
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class HeaderRowFactory extends AbstractFactory {
+
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+		new HeaderRow(descriptor: value)
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object headerRow) {
+		if(parent != null && parent instanceof HeaderFormat){
+			headerRow.row = parent.headerRows?.max { it.row }?.row?.plus(1) ?: 1 
+			parent.headerRows << headerRow
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+}
+
+class HeaderColumnFactory extends AbstractFactory {
+
+	public boolean isLeaf() {
+		true 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {		
+		
+		if(value && !attributes){
+			 new HeaderColumn(label: value)
+
+		}
+		else{
+			 new HeaderColumn()			
+		}
+
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object headerColumn) {
+		if(parent != null && parent instanceof HeaderRow){
+			headerColumn.column = parent.headerColumns?.max { it.column }?.column?.plus(1) ?: 1 
+			parent.headerColumns << headerColumn
+		}
+	}	
+}
+
+class EntityToSpreadsheetMappingFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		false 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+		new EntityToSpreadsheetMapping(sheetName: attributes.toSheet, entityKind: attributes.entity)
+	}
+
+	/*public void setParent(FactoryBuilderSupport builder, Object parent, Object entityToSpreadsheetMapping) {
+		if(parent != null && parent instanceof ExportFormat){		
+			parent.entityToSpreadsheetMappings[entityToSpreadsheetMapping.entityKind] = entityToSpreadsheetMapping
+		}
+	}*/
+
+	public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object entityToSpreadsheetMapping){
+		if(parent != null && parent instanceof ExportFormat){
+			// add standard propertyToColumnMappings for columns not mapped explicitly
+			def hf = parent.headerFormat[entityToSpreadsheetMapping.sheetName]
+			
+			if(hf){
+				hf.headerRows.each { hr ->
+					hr.headerColumns.each { hc ->
+						if(!entityToSpreadsheetMapping.propertyToColumnMappings.find { ptcm -> ptcm.columnHeader == hc.label }){
+							//println "create default property to column mapping: ${hc.label} --> ${hc.label}"
+							entityToSpreadsheetMapping.propertyToColumnMappings << new PropertyToColumnMapping(property: hc.label, columnHeader: hc.label)
+						}		
+					}
+				}		
+			}
+
+			parent.entityToSpreadsheetMappings[entityToSpreadsheetMapping.entityKind] = entityToSpreadsheetMapping
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class PropertyToColumnMappingFactory extends AbstractFactory {
+	
+	public boolean isLeaf() {
+		true 
+	}
+
+	public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+		new PropertyToColumnMapping(property: value, columnHeader: attributes.to)
+	}
+
+	public void setParent(FactoryBuilderSupport builder, Object parent, Object propertyToColumnMapping) {
+		if(parent != null && parent instanceof EntityToSpreadsheetMapping){
+			parent.propertyToColumnMappings << propertyToColumnMapping
+		}
+	}
+
+	public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes){
+		false // das verhindet das initialisieren des neunen HeaderFormat Objektes mit den im Builder spezifizierten Attributen
+		// sinnvoll, wenn andere attributnamen für den builder verwendet werden sollen...
+	}
+
+}
+
+class ExportFormatFactoryBuilder extends FactoryBuilderSupport {
+	public ExportFormatFactoryBuilder(boolean init = true){
+		super(init)
+	}
+
+	def registerObjectFactories() {
+		registerFactory("exportFormat", new ExportFormatFactory())
+		registerFactory("headerFormat", new HeaderFormatFactory())
+		registerFactory("row", new HeaderRowFactory())
+		registerFactory("col", new HeaderColumnFactory())
+		registerFactory("map", new EntityToSpreadsheetMappingFactory())
+		registerFactory("property", new PropertyToColumnMappingFactory())
+	}
+}
+
+class HeaderFormatFactoryBuilder extends FactoryBuilderSupport {
+	public HeaderFormatFactoryBuilder(boolean init = true){
+		super(init)
+	}
+
+	def registerObjectFactories() {		
+		registerFactory("headerFormat", new HeaderFormatFactory())
+		registerFactory("row", new HeaderRowFactory())		
+	}
+}
+
+
+if(args){
+	def parserBinding = new Binding()
+
+	parserBinding.pf = new ParsingFramework()
+	parserBinding.eb = new EntityDescriptorFactoryBuilder()
+	parserBinding.efb = new ExportFormatFactoryBuilder()
+	parserBinding.hfb = new HeaderFormatFactoryBuilder()
+	parserBinding.eDefHandler = new EntityDefinitionHandler()
+
+	parserBinding.entity = { args, closure -> parserBinding.eb.entity(args, closure) }	
+	parserBinding.exportFormat = { closure -> parserBinding.ef = parserBinding.efb.exportFormat(closure) }
+	parserBinding._embedProvenanceInformation_ = false 
+	parserBinding._exportUniqueEntities_= false	
+	parserBinding.export = { filename -> parserBinding.pf.toXLS(filename, parserBinding.ef, parserBinding._embedProvenanceInformation_, parserBinding._exportUniqueEntities_) }
+	parserBinding.loadWorkbook = { filename -> parserBinding.pf.loadWorkbook(filename) }
+	parserBinding.useSheet = { sheetName -> parserBinding.pf.useSheet(sheetName) }
+	parserBinding.transpose = { parserBinding.pf.transpose() }
+	parserBinding.parse = { closure -> parserBinding.pf.parse(closure, parserBinding.hf) }	
+	parserBinding.saveJSON = { filename, fullOutput=true, linksToProps=false -> def json = parserBinding.pf.toJSON(fullOutput, linksToProps) 
+									try{
+										new File(filename).withWriter { writer -> writer << json }
+									}catch(e){
+										println "eror saving json to $filename"
+										println e
+									}									
+								}	
+	parserBinding.saveEntities = { filename="", linksToProps=false -> parserBinding.saveJSON.call(filename, false, linksToProps) }
+	parserBinding.saveEntitiesWithLinksAsProperties = { filename="" -> parserBinding.saveEntities.call(filename, true) }
+	parserBinding.printJSON = { fullOutput=true, linksToProps=false -> println parserBinding.pf.toJSON(fullOutput, linksToProps) }	
+	parserBinding.printEntities = { linksToProps=false -> parserBinding.printJSON.call(false, linksToProps) }
+	parserBinding.printEntitiesWithLinksAsProperties = { -> parserBinding.printEntities.call(true) }
+	parserBinding.args = (args.size() > 1) ? args[1..-1] : []
+	parserBinding.headerFormat = { closure -> parserBinding.hf = parserBinding.hfb.headerFormat(closure) }
+	parserBinding.createEntityDefinitions = { Closure closure=null-> 
+												parserBinding.eDefHandler.buildDefinitionsFromDescriptors(parserBinding.pf.getEntityDescriptors()); 
+												if(closure) { 
+													parserBinding.eDefHandler.refine(closure)
+												}
+												else{
+													parserBinding.eDefHandler
+												}
+											}
+	
+
+
+	parserBinding.matchAndTake = { regex, group, defaultValue=null -> 
+		new Transformation(name: "match with regex $regex and replace with matching group $group",
+		 elementTransformation: { value -> if((m = value =~ regex).matches()) { return m.group(group) }; (defaultValue instanceof String) ? defaultValue : value },
+		 listTransformation: { it } )
+	}
+	parserBinding.injectProperty = { property, value -> 
+		new Rule(name: "inject new property $property with value ${ (value instanceof Closure) ? 'calculated by closure' : value}",
+			antecedent: { e -> true },
+			consequence: { e -> e."$property" = (value instanceof Closure) ? value(e) : value },
+			consequenceEffects: property) 
+	}
+	parserBinding.setPropertyNullIfNot = { property, condition ->
+		new Rule(name: "check $property and set to null if check not positive",
+			antecedent: { e -> condition(e) },
+			consequence: { e -> e },
+			alternative: { e -> e."$property" = null },
+			alternativeEffects: property )
+	}
+
+	parserBinding.FIRST = 1
+	parserBinding.SECOND = 2
+	parserBinding.THIRD = 3
+	parserBinding.FOURTH = 4
+	parserBinding.FIFTH = 5
+	parserBinding.SIXTH = 6
+	parserBinding.SEVENTH = 7
+	parserBinding.STRICT = MatchingStyle.STRICT 
+	parserBinding.EXACT = MatchingStyle.STRICT 
+	parserBinding.PREFIX = MatchingStyle.PREFIX 
+	parserBinding.SUFFIX = MatchingStyle.SUFFIX 
+	parserBinding.INFIX = MatchingStyle.INFIX 
+	parserBinding.SUBSTRING = MatchingStyle.INFIX 
+
+	if(parserBinding.args){
+		def cli = new CliBuilder()		
+		cli.inputFile(args:1, argName:'file', 'excel file to parse')
+		cli.sheet(args:1, argName:'sheet','sheet in workbook to parse')
+		cli.outputFile(args:1, argName:'file', 'excel file to export parsed data to')
+		cli.embedProvenanceInformation(args:0, 'boolean switch to trigger embedding of provenance information')
+
+		def options = cli.parse(parserBinding.args)
+
+		parserBinding._inputFile_ = options.inputFile ?: "NOT DEFINED"
+		parserBinding._sheet_ = options.sheet ?: "NOT DEFINED"
+		parserBinding._outputFile_ = options.outputFile ?: "NOT DEFINED"
+		parserBinding._embedProvenanceInformation_ = options.embedProvenanceInformation
+	}
+
+	
+	new GroovyShell(parserBinding).evaluate(new File(args[0]))
+}
+else{
+	println "Usage: parse <parserDefinition>"
+}
+
+
+
+
+//@TODO 
+//Add Creation of ColumnGroups (DONE)
+//Add Parsing of ColumnGroups (DONE)
+//Regex Patterns for ColumnGroups: regexPatterns = [/treatment\d.*value/, /treatment\d.*unit/ ... ] (DONE)
+//Naming of parts of ColumnGroups (DONE)
+//	For lists of names? (DONE)
+//Add Tracking of Provenance Information (DONE)
+//Add Input from real XLS data (DONE)
+//Add post-processing step to entity parsing/creation (maybe linking should go here; application of a rule-engine) (DONE)
+//Add complex header handling (DONE?)
+//Add Ouput to JSON for parsed entries (DONE)
+//!!?? Add Output of Provenance Information in PROV-Ontology 
+//Add Output to XLS of a specified Format (DONE)
+//!!!Add Parsing across sheets (entity.prop1 <-- sheet1:here + sheet2:there)
+//!!!Add Parsing into global variables that can be accessed across the parser definition
+//Add horizontal parsing (DONE via whole sheet transposition)
+//Add strict handling of necessary properties (DONE)
+//Think on embedding provenance information into the XLS sheet (tooltips? links?), cf. http://stackoverflow.com/questions/6609624/cell-comment-does-not-get-displayed-on-ms-office-though-it-comes-on-open-office
+//(Comments as tooltips DONE)
+//Create a nice DSL : Builders for ExportFormat, EntityDescriptor, (DONE) more lightweight syntax for CreateColumnGroups (?)
+//Add option to make linkTo a necessary property (DONE)
+//
+//GOAL: Successfully transform Sysmo Treatment Sheets to Stuart's Format with tracking of provenance information using the DSL (DONE)
+//
+//!!!Add possibility to define rows to skip in header format definitions
+//Add templated transformations, like matchAndTake(regex, groupnr, default="") (DONE)
+//Add convenient way to specify default values for parsed properties (DONE, could maybe be a bit more convenient though)
+//Add field to specify which property to use as id property for linking (DONE)
+//Add multiple links (DONE)
+//Clearer apprach to transformation of parsed data in the DSL
+//applyTransformation + applyRule + applyAction might be confusing --
+//when to use which?
+//!! Zu allen uniquen Entitäten einer Art in einer Zeile verlinken
+//!! möglichkeit notwendige eigenschaften zu injecten
+//!! add shortcut to create links like links to: column label in exportFormat, make use of new named links feature
+//add optional strict matching for column headers (+ restricted to a certain row in the header) (DONE)
+//---> maybe add four ways of matching: strict, prefix, infix, suffix and a way to set the default for a parser (DONE)
+//LinkTo Entity that meets certain conditions like linkTo "Specimen", where: { src, target -> } (DONE)
+//read values of nth column with matching headers (DONE)
+//:take nth ---> update provenance information (DONE)
+//filtered output of json (just the meat) (DONE)
+//!!! generation and output of entity definitions for seek: entities with all props, types and constraints to props, (DONE, without TYPES and CONSTRAINTS)
+//!!! required props, props to search, props to display (DONE)
+//!!! possibility to use entity definitions to check parsed entities (?)
+//!!! or *the other way around*: use parsing definition to create a first entity definition to that can be refined manually (DONE)

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_genxlsparsingwithprovenance" default="compile.module.genxlsparsingwithprovenance">
+  <dirname property="module.genxlsparsingwithprovenance.basedir" file="${ant.file.module_genxlsparsingwithprovenance}"/>
+  
+  <property name="module.jdk.home.genxlsparsingwithprovenance" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.genxlsparsingwithprovenance" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.genxlsparsingwithprovenance" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.genxlsparsingwithprovenance" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
+  
+  <property name="genxlsparsingwithprovenance.output.dir" value="${module.genxlsparsingwithprovenance.basedir}/out/production/genXlsParsingWithProvenance"/>
+  <property name="genxlsparsingwithprovenance.testoutput.dir" value="${module.genxlsparsingwithprovenance.basedir}/out/test/genXlsParsingWithProvenance"/>
+  
+  <path id="genxlsparsingwithprovenance.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="genxlsparsingwithprovenance.module.production.classpath">
+    <path refid="${module.jdk.classpath.genxlsparsingwithprovenance}"/>
+    <path refid="library.groovy-2.3.2.classpath"/>
+    <path refid="library.org.apache.poi:poi:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:poi-ooxml:3.10-final.classpath"/>
+  </path>
+  
+  <path id="genxlsparsingwithprovenance.runtime.production.module.classpath">
+    <path refid="library.groovy-2.3.2.classpath"/>
+    <pathelement location="${genxlsparsingwithprovenance.output.dir}"/>
+    <path refid="library.org.apache.poi:poi:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:poi-ooxml:3.10-final.classpath"/>
+  </path>
+  
+  <path id="genxlsparsingwithprovenance.module.classpath">
+    <path refid="${module.jdk.classpath.genxlsparsingwithprovenance}"/>
+    <path refid="library.groovy-2.3.2.classpath"/>
+    <pathelement location="${genxlsparsingwithprovenance.output.dir}"/>
+    <path refid="library.org.spockframework:spock-core:0.7-groovy-2.0.classpath"/>
+    <path refid="library.junit:junit:4.10.classpath"/>
+    <path refid="library.org.apache.poi:poi:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:poi-ooxml:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:ooxml-schemas:1.1.classpath"/>
+  </path>
+  
+  <path id="genxlsparsingwithprovenance.runtime.module.classpath">
+    <path refid="library.groovy-2.3.2.classpath"/>
+    <pathelement location="${genxlsparsingwithprovenance.testoutput.dir}"/>
+    <pathelement location="${genxlsparsingwithprovenance.output.dir}"/>
+    <path refid="library.org.spockframework:spock-core:0.7-groovy-2.0.classpath"/>
+    <path refid="library.junit:junit:4.10.classpath"/>
+    <path refid="library.org.apache.poi:poi:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:poi-ooxml:3.10-final.classpath"/>
+    <path refid="library.org.apache.poi:ooxml-schemas:1.1.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.genxlsparsingwithprovenance">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.genxlsparsingwithprovenance">
+    <patternset refid="excluded.from.module.genxlsparsingwithprovenance"/>
+  </patternset>
+  
+  <path id="genxlsparsingwithprovenance.module.sourcepath">
+    <dirset dir="${module.genxlsparsingwithprovenance.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  <path id="genxlsparsingwithprovenance.module.test.sourcepath">
+    <dirset dir="${module.genxlsparsingwithprovenance.basedir}">
+      <include name="tests"/>
+      <include name="test-resources"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.genxlsparsingwithprovenance" depends="compile.module.genxlsparsingwithprovenance.production,compile.module.genxlsparsingwithprovenance.tests" description="Compile module genXlsParsingWithProvenance"/>
+  
+  <target name="compile.module.genxlsparsingwithprovenance.production" depends="register.custom.compilers" description="Compile module genXlsParsingWithProvenance; production classes">
+    <mkdir dir="${genxlsparsingwithprovenance.output.dir}"/>
+    <groovyc destdir="${genxlsparsingwithprovenance.output.dir}" fork="yes">
+      <src refid="genxlsparsingwithprovenance.module.sourcepath"/>
+      <classpath refid="genxlsparsingwithprovenance.module.production.classpath"/>
+      <patternset refid="excluded.from.compilation.genxlsparsingwithprovenance"/>
+      <javac debug="${compiler.debug}">
+        <compilerarg line="${compiler.args.genxlsparsingwithprovenance}"/>
+      </javac>
+    </groovyc>
+    
+    <copy todir="${genxlsparsingwithprovenance.output.dir}">
+      <fileset dir="${module.genxlsparsingwithprovenance.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.genxlsparsingwithprovenance.tests" depends="register.custom.compilers,compile.module.genxlsparsingwithprovenance.production" description="compile module genXlsParsingWithProvenance; test classes" unless="skip.tests">
+    <mkdir dir="${genxlsparsingwithprovenance.testoutput.dir}"/>
+    <groovyc destdir="${genxlsparsingwithprovenance.testoutput.dir}" fork="yes">
+      <src refid="genxlsparsingwithprovenance.module.test.sourcepath"/>
+      <classpath refid="genxlsparsingwithprovenance.module.classpath"/>
+      <patternset refid="excluded.from.compilation.genxlsparsingwithprovenance"/>
+      <javac debug="${compiler.debug}">
+        <compilerarg line="${compiler.args.genxlsparsingwithprovenance}"/>
+      </javac>
+    </groovyc>
+    
+    <copy todir="${genxlsparsingwithprovenance.testoutput.dir}">
+      <fileset dir="${module.genxlsparsingwithprovenance.basedir}/tests">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.genxlsparsingwithprovenance.basedir}/test-resources">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.genxlsparsingwithprovenance" description="cleanup module">
+    <delete dir="${genxlsparsingwithprovenance.output.dir}"/>
+    <delete dir="${genxlsparsingwithprovenance.testoutput.dir}"/>
+  </target>
+</project>

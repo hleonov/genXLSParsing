@@ -1,0 +1,168 @@
+loadWorkbook(_inputFile_)
+useSheet("IDF_EXAMPLE")
+// transpose rows and columns
+transpose()
+// define header format for this sheet
+headerFormat {
+	row "label"
+}
+
+// parse (parts of) the IDF data
+
+parse {
+
+	parseEntity entity(ofKind: "Experiment Information"){
+		parseProperty necessary: "Investigation Title", from: "Investigation Title"
+		parseProperty necessary: "Experiment Class", from: "Experiment Class"
+		parseProperty "Experiment Description", from: "Experiment Description"
+		parseProperty "Experimental Design", from: "Experimental Design"
+	}
+
+	columnGroup(regexPatterns: [name: /Experimental Factor Name/, type:/Experimental Factor Type/]){
+		parseEntity entity(ofKind: "Experimental Factor"){
+			parseProperty necessary: "Name", from: "name"
+			parseProperty necessary: "Type", from: "type"
+		}
+	}
+
+	columnGroup(regexPatterns: [lastName: /Person Last Name/, firstName: /Person First Name/, 
+		midInitials: /Person Mid Initials/, email: /Person Email/, phone: /Person Phone/,
+		address: /Person Address/, institution: /Person.*Institution/, department: /Person.*Department/,
+		roles: /Person Roles/]){
+			parseEntity entity(ofKind: "Personal Information"){
+				parseProperty necessary: "Last Name", from: "lastName"
+				parseProperty necessary: "First Name", from: "firstName"
+				parseProperty "Mid Initials", from: "midInitials"
+				parseProperty necessary: "Email", from: "email"
+				parseProperty "Phone", from: "phone"
+				parseProperty "Address", from: "address"
+				parseProperty "Affiliation - Institution", from: "institution"
+				parseProperty "Affiliation - Department", from: "department"
+				parseProperty "Roles", from: "roles"
+			}
+	}
+
+	columnGroup(regexPatterns: [name: /Protocol Name/, uri: /Protocol URI/, type: /Protocol Type/,
+		description: /Protocol Description/, parameters: /Protocol Parameters/, 
+		hardware: /Protocol Hardware/, software: /Protocol Software/]){
+			parseEntity entity(ofKind: "Protocol"){				
+				parseProperty necessary: "id", from: "name"
+				parseProperty necessary: "Name", from: "name"
+				parseProperty necessary: "URI", from: "uri"
+				parseProperty necessary: "Type", from: "type"
+				parseProperty "Description", from: "description"
+				parseProperty "Parameters", from: "parameters"
+				parseProperty "Hardware", from: "hardware"
+				parseProperty "Software", from: "software"
+			}
+	}
+
+}
+
+// Now parse the SDRF data
+
+useSheet("SDRF_example") 
+
+headerFormat {
+	row "comment"
+	row "empty1"
+	row "empty2"
+	row "sectionHeader"
+	row "columnHeader"
+}
+
+parse {	
+
+	parseEntity entity(ofKind: "Specimen", matchingStyle: SUBSTRING) {
+
+		parseProperty necessary: "id", from: "# Specimen"		
+		parseProperty "Material Type", from: "Material Type"
+		parseProperty "Organism", from: "Organism"
+		parseProperty "Strain or Line", from: "Strain or Line"
+		parseProperty "Organism Part",  from: "Organism Part"
+		parseProperty "Organism Status", from: "Organism Status"
+		parseProperty "Sex", from: "Sex"
+		parseProperty "Age", from: "Age"
+		parseProperty "Age Time Unit", from: "Age Time Unit"
+		parseProperty "Sampling Time Point", from: "Sampling Time Point"
+		parseProperty "Sampling Time Point Unit", from: "Sampling Time Point Unit"
+		parseProperty "Temperature", from: "Temperature"
+		parseProperty "Temperature Unit", from: "Temperature Unit"
+		parseProperty "pH", from: "pH"
+		parseProperty "Atmosphere", from: "Atmosphere"
+		parseProperty "Compound", from: "Compound"
+		parseProperty "Media", from: "Media"
+		parseProperty "Nutrients", from: "Nutrients"
+		parseProperty "Storage Protocol", from: "Storage Protocol"
+		parseProperty "Storage Date", from: "Storage Date"
+		parseProperty "Storage Location", from: "Storage Location"
+		
+		linkTo "Protocol", where: { source, target -> target."Name" == source."Storage Protocol" }
+	}
+
+	parseEntity entity(ofKind: "RNA Extraction", matchingStyle: SUBSTRING) {
+
+		parseProperty necessary:"Extract name", from: "Extract Name"
+		parseProperty "Extraction Protocol", from: "Extraction Protocol"
+		parseProperty "RIN / RNA integrity number", from: "integrity number"
+		parseProperty "Concentration", from: "Concentration"
+		parseProperty "Concentration Unit", from: "columnHeader=Unit", take: FIRST, matchingStyle: EXACT
+		parseProperty "Volume", from: "Volume" 
+		parseProperty "Volume Unit", from: "columnHeader=Unit", take: SECOND, matchingStyle: EXACT
+		parseProperty "Extraction Kit", from: "Extraction Kit"
+		parseProperty "Material Type", from: "Material Type"
+		parseProperty "Extraction Date", from: "Extraction Date"
+		parseProperty "Storage Protocol", from: "Storage Protocol", take: SECOND
+		parseProperty "Storage Date", from: "Storage Date", take: SECOND
+		parseProperty "Storage Location", from: "Storage Location", take: SECOND
+
+		
+		linkTo "Specimen"
+		linkTo "Protocol", where: { source, target -> target."URI" == source."Extraction Protocol" }
+		linkTo "Protocol", where: { source, target -> target."Name" == source."Storage Protocol" }
+	}
+}
+
+
+printJSON()
+
+exportFormat {
+
+	headerFormat(forSheet: "Protocols"){
+		row {
+			col "Name"
+			col "Type"
+			col "Description"
+		}
+	}
+
+	headerFormat(forSheet: "Specimens"){
+		row {
+			col "id"
+			col "Organism"
+			col "Strain or Line"
+			col "Age"
+			col "Age Time Unit"
+		}
+	}
+
+	headerFormat(forSheet: "RNA Extractions"){
+		row {
+			col "Extract name"
+			col "Concentration"
+			col "Concentration Unit"
+			col "Volume"
+			col "Volume Unit"
+			col "Links to"
+		}
+	}
+
+	map entity: "Protocol", toSheet: "Protocols"
+	map entity: "Specimen", toSheet: "Specimens"
+	map entity: "RNA Extraction", toSheet: "RNA Extractions", {
+		property "linksTo", to: "Links to"
+	}
+
+}
+
+export _outputFile_

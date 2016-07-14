@@ -1,0 +1,39 @@
+{
+    "test": [
+        {
+            "kind": "test",
+            "properties": [
+                {
+                    "name": "default",
+                    "required": false,
+                    "searchable": true,
+                    "displayed": true
+                },
+                {
+                    "name": "required1",
+                    "required": true,
+                    "searchable": true,
+                    "displayed": true
+                },
+                {
+                    "name": "required2",
+                    "required": true,
+                    "searchable": true,
+                    "displayed": true
+                },
+                {
+                    "name": "invisible",
+                    "required": false,
+                    "searchable": true,
+                    "displayed": false
+                },
+                {
+                    "name": "invisible, unsearchable",
+                    "required": false,
+                    "searchable": false,
+                    "displayed": false
+                }
+            ]
+        }
+    ]
+}
