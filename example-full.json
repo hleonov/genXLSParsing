@@ -1,0 +1,1446 @@
+{
+    "person": [
+        {
+            "kind": "person",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Person.Name@3",
+                        "books:Person.Age@3"
+                    ],
+                    "about": "id",
+                    "actions": [
+                        "build id"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Name@3"
+                    ],
+                    "about": "name",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Age@3"
+                    ],
+                    "about": "age",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Profession@3"
+                    ],
+                    "about": "profession",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "remark",
+                    "actions": [
+                        "inject new property remark with value processed by a general parsing framework"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "nerd",
+                    "actions": [
+                        "inject new property nerd with value calculated by closure"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "id"
+            ],
+            "id": "Jane Doe--34",
+            "name": "Jane Doe",
+            "age": "34",
+            "profession": "Reader",
+            "remark": "processed by a general parsing framework",
+            "nerd": "not at all"
+        },
+        {
+            "kind": "person",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Person.Name@4",
+                        "books:Person.Age@4"
+                    ],
+                    "about": "id",
+                    "actions": [
+                        "build id"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Name@4"
+                    ],
+                    "about": "name",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Age@4"
+                    ],
+                    "about": "age",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Profession@4"
+                    ],
+                    "about": "profession",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "remark",
+                    "actions": [
+                        "inject new property remark with value processed by a general parsing framework"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "nerd",
+                    "actions": [
+                        "inject new property nerd with value calculated by closure"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "id"
+            ],
+            "id": "Jane Doe--42",
+            "name": "Jane Doe",
+            "age": "42",
+            "profession": "Writer",
+            "remark": "processed by a general parsing framework",
+            "nerd": "not at all"
+        },
+        {
+            "kind": "person",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Person.Name@5",
+                        "books:Person.Age@5"
+                    ],
+                    "about": "id",
+                    "actions": [
+                        "build id"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Name@5"
+                    ],
+                    "about": "name",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Age@5"
+                    ],
+                    "about": "age",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Profession@5"
+                    ],
+                    "about": "profession",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "remark",
+                    "actions": [
+                        "inject new property remark with value processed by a general parsing framework"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "nerd",
+                    "actions": [
+                        "inject new property nerd with value calculated by closure"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "id"
+            ],
+            "id": "Hacker42--101010",
+            "name": "Hacker42",
+            "age": "101010",
+            "profession": "Software Developer",
+            "remark": "processed by a general parsing framework",
+            "nerd": "yes!"
+        },
+        {
+            "kind": "person",
+            "fromRow": 6,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Person.Name@6",
+                        "books:Person.Age@6"
+                    ],
+                    "about": "id",
+                    "actions": [
+                        "build id"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Name@6"
+                    ],
+                    "about": "name",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Age@6"
+                    ],
+                    "about": "age",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Person.Profession@6"
+                    ],
+                    "about": "profession",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "remark",
+                    "actions": [
+                        "inject new property remark with value processed by a general parsing framework"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "nerd",
+                    "actions": [
+                        "inject new property nerd with value calculated by closure"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "nerd",
+                    "actions": [
+                        "someone is a historian above 200 years of age => he/she is a nerd"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "id"
+            ],
+            "id": "Macaulay--214",
+            "name": "Macaulay",
+            "age": "214",
+            "profession": "Historian",
+            "remark": "processed by a general parsing framework",
+            "nerd": "yes!"
+        }
+    ],
+    "book": [
+        {
+            "kind": "book",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Novel@3"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@3"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Infinite Jest",
+            "author": "David Foster Wallace",
+            "genre": "Novel",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--34"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@3"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@3"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "The Swerve",
+            "author": "Stephen Greenblatt",
+            "genre": "Non-fiction",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--34"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book1.Title@3"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Author@3"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Genre@3"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Moby Dick",
+            "author": "Melville",
+            "genre": "Novel",
+            "groupByProp": "Book1",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--34"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book2.Title@3"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Author@3"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Genre@3"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "The Significance of Free Will",
+            "author": "Robert Kane",
+            "genre": "Non-fiction",
+            "groupByProp": "Book2",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--34"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 3,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book3.Title@3"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book3.Author@3"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book3.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Faust",
+            "author": "Goethe",
+            "groupByProp": "Book3",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--34"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Novel@4"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@4"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "The Magic Mountain",
+            "author": "Thomas Mann",
+            "genre": "Novel",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--42"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@4"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@4"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "How to write",
+            "author": "Joe Doe",
+            "genre": "Non-fiction",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--42"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book1.Title@4"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Author@4"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Genre@4"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Pride and Prejudice",
+            "author": "Jane Austen",
+            "genre": "Novel",
+            "groupByProp": "Book1",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--42"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book2.Title@4"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Author@4"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Genre@4"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Mrs. Dalloway",
+            "author": "Virginia Woolf",
+            "genre": "Novel",
+            "groupByProp": "Book2",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--42"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 4,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book3.Title@4"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book3.Author@4"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book3.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "A Room Of One's Own",
+            "author": "Virginia Woolf",
+            "groupByProp": "Book3",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Jane Doe--42"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Novel@5"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@5"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "The Hitchhikers Guide to Galaxy",
+            "author": "Douglas Adams",
+            "genre": "Novel",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Hacker42--101010"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@5"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@5"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "The Art of Programming",
+            "author": "Don Knuth",
+            "genre": "Non-fiction",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Hacker42--101010"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book1.Title@5"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Author@5"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Genre@5"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book1.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "C++",
+            "author": "Bjarne Strousup",
+            "genre": "Non-fiction",
+            "groupByProp": "Book1",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Hacker42--101010"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book2.Title@5"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Author@5"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Genre@5"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Title@entity"
+                    ],
+                    "about": "groupByProp",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Groovy for DSL",
+            "author": "Dearle",
+            "genre": "Non-fiction",
+            "groupByProp": "Book2",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Hacker42--101010"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 6,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Novel@6"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@6"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Novel@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Iliad",
+            "author": "Homer",
+            "genre": "Novel",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Macaulay--214"
+                },
+                {
+                    "kind": "person",
+                    "id": "Macaulay--214"
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "fromRow": 6,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@6"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 1"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@6"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "match with regex ^(.*)\\s+by\\s+(.*) and replace with matching group 2"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book.Non-fiction@property"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "linksTo"
+            ],
+            "title": "Speed reading: Ancient Greek Historians in 2 days",
+            "author": "Macaulay",
+            "genre": "Non-fiction",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Macaulay--214"
+                },
+                {
+                    "kind": "person",
+                    "id": "Macaulay--214"
+                }
+            ]
+        }
+    ],
+    "books about groovy": [
+        {
+            "kind": "books about groovy",
+            "fromRow": 5,
+            "provenanceInformation": [
+                {
+                    "sources": [
+                        "books:Book2.Title@5"
+                    ],
+                    "about": "title",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Author@5"
+                    ],
+                    "about": "author",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Genre@5"
+                    ],
+                    "about": "genre",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "books:Book2.Title@5"
+                    ],
+                    "about": "aboutGroovy",
+                    "actions": [
+                        "Identity"
+                    ],
+                    "agents": [
+                        "Parser"
+                    ]
+                },
+                {
+                    "sources": [
+                        "parsed property"
+                    ],
+                    "about": "global",
+                    "actions": [
+                        "check aboutGroovy and set to null if check not positive"
+                    ],
+                    "agents": [
+                        "Parser",
+                        "RuleEngine"
+                    ]
+                }
+            ],
+            "necessaryProperties": [
+                "title",
+                "author",
+                "aboutGroovy",
+                "linksTo"
+            ],
+            "title": "Groovy for DSL",
+            "author": "Dearle",
+            "genre": "Non-fiction",
+            "aboutGroovy": "Groovy for DSL",
+            "linksTo": [
+                {
+                    "kind": "person",
+                    "id": "Hacker42--101010"
+                }
+            ]
+        }
+    ]
+}

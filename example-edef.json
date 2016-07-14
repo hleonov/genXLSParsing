@@ -1,0 +1,268 @@
+{
+    "person": [
+        {
+            "kind": "person",
+            "properties": [
+                {
+                    "name": "id",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "name",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "age",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "profession",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                }
+            ]
+        }
+    ],
+    "book": [
+        {
+            "kind": "book",
+            "properties": [
+                {
+                    "name": "title",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "author",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "genre",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "link1",
+                    "required": true,
+                    "displayed": false,
+                    "searchable": false,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "link2",
+                    "required": false,
+                    "displayed": false,
+                    "searchable": false,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "kind": "book",
+            "properties": [
+                {
+                    "name": "title",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "author",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "genre",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "groupByProp",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "link1",
+                    "required": true,
+                    "displayed": false,
+                    "searchable": false,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                }
+            ]
+        }
+    ],
+    "books about groovy": [
+        {
+            "kind": "books about groovy",
+            "properties": [
+                {
+                    "name": "title",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "author",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "genre",
+                    "required": false,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "aboutGroovy",
+                    "required": true,
+                    "displayed": true,
+                    "searchable": true,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "link1",
+                    "required": true,
+                    "displayed": false,
+                    "searchable": false,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                },
+                {
+                    "name": "link2",
+                    "required": false,
+                    "displayed": false,
+                    "searchable": false,
+                    "typeInformation": [
+                        
+                    ],
+                    "constraints": [
+                        
+                    ]
+                }
+            ]
+        }
+    ]
+}

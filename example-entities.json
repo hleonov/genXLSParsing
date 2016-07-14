@@ -1,0 +1,263 @@
+{
+    "person": [
+        {
+            "age": "34",
+            "id": "Jane Doe--34",
+            "kind": "person",
+            "name": "Jane Doe",
+            "nerd": "not at all",
+            "profession": "Reader",
+            "remark": "processed by a general parsing framework"
+        },
+        {
+            "age": "42",
+            "id": "Jane Doe--42",
+            "kind": "person",
+            "name": "Jane Doe",
+            "nerd": "not at all",
+            "profession": "Writer",
+            "remark": "processed by a general parsing framework"
+        },
+        {
+            "age": "101010",
+            "id": "Hacker42--101010",
+            "kind": "person",
+            "name": "Hacker42",
+            "nerd": "yes!",
+            "profession": "Software Developer",
+            "remark": "processed by a general parsing framework"
+        },
+        {
+            "age": "214",
+            "id": "Macaulay--214",
+            "kind": "person",
+            "name": "Macaulay",
+            "nerd": "yes!",
+            "profession": "Historian",
+            "remark": "processed by a general parsing framework"
+        }
+    ],
+    "book": [
+        {
+            "author": "David Foster Wallace",
+            "genre": "Novel",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--34",
+                    "kind": "person"
+                }
+            ],
+            "title": "Infinite Jest"
+        },
+        {
+            "author": "Stephen Greenblatt",
+            "genre": "Non-fiction",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--34",
+                    "kind": "person"
+                }
+            ],
+            "title": "The Swerve"
+        },
+        {
+            "author": "Melville",
+            "genre": "Novel",
+            "groupByProp": "Book1",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--34",
+                    "kind": "person"
+                }
+            ],
+            "title": "Moby Dick"
+        },
+        {
+            "author": "Robert Kane",
+            "genre": "Non-fiction",
+            "groupByProp": "Book2",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--34",
+                    "kind": "person"
+                }
+            ],
+            "title": "The Significance of Free Will"
+        },
+        {
+            "author": "Goethe",
+            "groupByProp": "Book3",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--34",
+                    "kind": "person"
+                }
+            ],
+            "title": "Faust"
+        },
+        {
+            "author": "Thomas Mann",
+            "genre": "Novel",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--42",
+                    "kind": "person"
+                }
+            ],
+            "title": "The Magic Mountain"
+        },
+        {
+            "author": "Joe Doe",
+            "genre": "Non-fiction",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--42",
+                    "kind": "person"
+                }
+            ],
+            "title": "How to write"
+        },
+        {
+            "author": "Jane Austen",
+            "genre": "Novel",
+            "groupByProp": "Book1",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--42",
+                    "kind": "person"
+                }
+            ],
+            "title": "Pride and Prejudice"
+        },
+        {
+            "author": "Virginia Woolf",
+            "genre": "Novel",
+            "groupByProp": "Book2",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--42",
+                    "kind": "person"
+                }
+            ],
+            "title": "Mrs. Dalloway"
+        },
+        {
+            "author": "Virginia Woolf",
+            "groupByProp": "Book3",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Jane Doe--42",
+                    "kind": "person"
+                }
+            ],
+            "title": "A Room Of One's Own"
+        },
+        {
+            "author": "Douglas Adams",
+            "genre": "Novel",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Hacker42--101010",
+                    "kind": "person"
+                }
+            ],
+            "title": "The Hitchhikers Guide to Galaxy"
+        },
+        {
+            "author": "Don Knuth",
+            "genre": "Non-fiction",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Hacker42--101010",
+                    "kind": "person"
+                }
+            ],
+            "title": "The Art of Programming"
+        },
+        {
+            "author": "Bjarne Strousup",
+            "genre": "Non-fiction",
+            "groupByProp": "Book1",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Hacker42--101010",
+                    "kind": "person"
+                }
+            ],
+            "title": "C++"
+        },
+        {
+            "author": "Dearle",
+            "genre": "Non-fiction",
+            "groupByProp": "Book2",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Hacker42--101010",
+                    "kind": "person"
+                }
+            ],
+            "title": "Groovy for DSL"
+        },
+        {
+            "author": "Homer",
+            "genre": "Novel",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Macaulay--214",
+                    "kind": "person"
+                },
+                {
+                    "id": "Macaulay--214",
+                    "kind": "person"
+                }
+            ],
+            "title": "Iliad"
+        },
+        {
+            "author": "Macaulay",
+            "genre": "Non-fiction",
+            "kind": "book",
+            "linksTo": [
+                {
+                    "id": "Macaulay--214",
+                    "kind": "person"
+                },
+                {
+                    "id": "Macaulay--214",
+                    "kind": "person"
+                }
+            ],
+            "title": "Speed reading: Ancient Greek Historians in 2 days"
+        }
+    ],
+    "books about groovy": [
+        {
+            "aboutGroovy": "Groovy for DSL",
+            "author": "Dearle",
+            "genre": "Non-fiction",
+            "kind": "books about groovy",
+            "linksTo": [
+                {
+                    "id": "Hacker42--101010",
+                    "kind": "person"
+                }
+            ],
+            "title": "Groovy for DSL"
+        }
+    ]
+}

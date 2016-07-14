@@ -1,0 +1,228 @@
+// load workbook and sheet
+// _inputFile_ and _sheet_ are set by command line arguments
+loadWorkbook(_inputFile_)
+useSheet(_sheet_)
+// define header format for this sheet
+headerFormat {
+	row "entity"
+	row "property"
+}
+
+// start the parsing block. each parsed entity gets its own parseEntity block
+parse {
+
+	parseEntity entity(ofKind: "person"){
+		// parse a necessary property "id" from two columns
+		// entities with null valued necessary properties are going to be rejected after parsing
+		// columns are identified via their header row or via an index (1 based)
+		// for headerformat consisting of several rows the format is row1.row2. ...
+		// string search is a case insensitive prefix search by default
+		// the use of regular expressions is possible
+		// list of column identifiers are possible
+		parseProperty necessary: "id", from: ["person.name", "person.age"]
+		parseProperty "name", from: "person.name"
+		parseProperty "age", from: 2
+		parseProperty "profession", from: "person.profession"
+		
+		// this applies a named transformation to the property defined in onProperty
+		// there are two distinct transformations for lists of parsed values and single values
+		// default is in both cases the identity transformation { it }
+		applyTransformation "build id", ofList: { it.join("--") }, onProperty: "id"
+
+		// the action injectProperty allows to inject properties that were not parsed from the inputfile
+		// either giving a default value to all entities
+		applyAction injectProperty("remark", "processed by a general parsing framework")
+		// or using a closure to calculate a value for each entity
+		applyAction injectProperty("nerd", { (it.profession == "Software Developer") ? "yes!" : "not at all" })
+		// behind the scenes applyAction injectProperty ... uses a general rule engine
+		// It's possible to write custom rules too
+		// Just speficy a name, a precondition, a consequence and (optionally) an alternative if the precondition is not met
+		// For better provenance tracking it is helpful to giver additonal specificaitons of what properties were affected by the consequence / alternative
+		applyRule "someone is a historian above 200 years of age => he/she is a nerd",
+			antecedent: { e -> (e.age as Integer) > 200 && e.profession == "Historian" },
+			consequence: { e -> e.nerd = "yes!"},
+			consequenceEffects: "nerd"	
+	}
+
+	// sometimes there are several entities of one kind in a single row
+	// we can create column groups to group together those columns in a row 
+	// that contain information about a distinct entity
+	// for each created column group we can than parse 1..n entities
+	
+	// there are several ways to create column groups
+	// if we know for sure that there is a certain
+	// pattern of fixed size starting at specific column
+	// and is repeated x times we can use the following way to 
+	// create column groups
+	columnGroup(start: 4, size: 1, repetitions: 2) {
+		
+		parseEntity entity(ofKind: "book"){
+			// we parse the same strings into "title" and "author"
+			// we'll use regex group extraction later on to get to
+			// the appropiate parts for each property
+			parseProperty necessary: "title", from: 1
+			parseProperty necessary: "author", from: 1
+
+			// we can parse data from the header of column
+			// the values used after the header@ have to be
+			// from the range of header row names given in the
+			// header format definition used
+			parseProperty "genre", from: "header@property", of: 1
+
+			// as this a groovy script afer all we can always
+			// define our own variables and closures to make 
+			// the parser definition more readible
+			def regex = /^(.*)\s+by\s+(.*)/
+			// matchAndTake is a default implementation of an often used transformation:
+			// check if a property matches a regex, take the nth matching group and 
+			// replace the property string with the string in this group
+			applyTransformation matchAndTake(regex, 1), onProperty: "title"
+			applyTransformation matchAndTake(regex, 2), onProperty: "author"
+
+			// this links the parsed book entity to 
+			// the person entity parsed in this row
+			// links also be necessary properties of an entity
+			linkTo necessary:"person" 
+			// we can also link all parsed books to specific entities
+			// of kind person by giving an associated id
+			linkTo "person", withID: "Macaulay--214"
+		}
+	}
+
+	// it's also possible to use a map of named regular expressions
+	// to create columnGroups
+	// The groupBy option allows to specify the grouping of matching
+	// columns by column or header data
+	columnGroup(regexPatterns: ["title":/Book\d+.Title/, 
+		"author":/Book\d+.Author/, "genre":/Book\d+.Genre/],
+		groupBy: "header@entity"){
+
+		parseEntity entity(ofKind: "book"){
+			// the names of the named regex patterns can now be
+			// used to access the parsed data
+			parseProperty necessary: "title", from: "title"
+			parseProperty necessary: "author", from: "author"
+			parseProperty "genre", from: "genre"
+			// this is the element used for the grouping
+			parseProperty "groupByProp", from: "header@entity", of: "title"
+
+			linkTo necessary: "person"			
+		}
+
+		// it's possible to parse more than one entity out of
+		// a given column group
+		parseEntity entity(ofKind: "books about groovy"){
+			// that's copied over from the parsing of book entities
+			parseProperty necessary: "title", from: "title"
+			parseProperty necessary: "author", from: "author"
+			parseProperty "genre", from: "genre"			
+			
+			// the following "fake" property will act as flag to
+			// remove all books that are not about groovy
+			parseProperty necessary: "aboutGroovy", from: "title"
+			// we can then use the setPropertyNullIfNot action to
+			// check whether the title information parsed into aboutGroovy
+			// contains the string 'groovy'
+			// if this is not the case the property will be set to null and
+			// will be rejected because the aboutGroovy property was
+			// flagged as necessary
+			applyAction setPropertyNullIfNot("aboutGroovy", 
+				{ it."aboutGroovy" && it."aboutGroovy".toLowerCase().contains("groovy") })
+
+			linkTo necessary: "person"
+			linkTo "person", withID: "Macaulay--214"
+		}
+	}
+}
+
+// this outputs a json representation of parsed entities to stdout
+printJSON()
+
+// saving entity information in different depths of details to files
+saveJSON("example-full.json")
+saveEntities("example-entities.json")
+saveEntitiesWithLinksAsProperties("example-entities-linksAsProperties.json")
+
+// define format for the xls export
+exportFormat {
+	// define the header format for a given sheet
+	// not all properties of entities need to have
+	// a related column in a sheet
+	headerFormat (forSheet:"persons") { 
+		row {
+			col "id"
+			col "name"
+			col "age"
+			col "geek"
+		}
+	}
+
+	headerFormat (forSheet:"books") {
+		row {
+			col "author"
+			col "title"
+			col "genre"
+			col "belongs to person"
+		}
+	}
+
+	// now we can map entities to sheets
+	// there is a default mapping of properties of an entity
+	// to columns with the name of a property in a sheet
+	// this default can be overwritten by giving a specific mapping
+	// from a property to a column in a sheet	
+	map entity:"person", toSheet: "persons", {
+		property "nerd", to: "geek"
+	}
+
+	map entity:"book", toSheet: "books", {
+		property "linksTo", to: "belongs to person"
+	}	
+}
+
+// you can filter out non-unique entities by either 
+// setting _exportUniqueEntities_ = true
+// or defining a list of entity kinds on which tests 
+// for uniqueness should be performed
+// default property for testing the uniqueness is "id"
+// but you speficy any other property to be used for this purpose
+// just append it to the name of the entitiy kind like this
+// "kind:property"
+
+// this checks the parsed entities of type person for uniqueness
+// using the default property ("id") this will not change
+// the list of parsed person entities because they are
+// no non-unique persons (same name AND same age) in the inputFile
+
+// if we would test the uniqueness of our parsed person entities
+// just by checking for uniquenees of the name property we will
+// get a quite different result
+// there are two persons named "jane doe" (of different age)
+// namewise they are non-unique and one of them will be removed
+// from the list of parsed persons
+// this might remove the link tarket of some book entities
+// So be careful when filtering for uniqueness!
+
+//_exportUniqueEntities_ = true // false 
+//_exportUniqueEntities_ = ["person"]
+//_exportUniqueEntities_ = ["person:name"]
+
+// this sets the flag to embed provenance information or not
+// this flag is usually parsed from the command line
+//_embedProvenanceInformation_ = true // false 
+
+// finally export to destination xls
+// _outputFile_ is parsed from the command line
+export _outputFile_
+
+// new feature: create entity definitions based on your instructions to parse entities
+createEntityDefinitions().saveTo("example-edef.json")
+
+// overwrite some defaults
+createEntityDefinitions() {
+    define(entity: "book") {
+        property "title", required: false, searchable: false
+        display properties: ["link1", "link2"]
+        searchable property: "link2"
+    }
+}.saveTo("modified-example-edef.json")
